@@ -1,8 +1,18 @@
 function IF = filt_sep_gabor(I,fname,DC_thr)
+% Compute the 2D filtering of the stereo input with 2D Gabor filters (FI_n)
+% Note that 2D filtering is achieved as a combination of two 1D filtering
+%           I       stereo image(input);
+%           fname   name of .mat file that contains the 1D Gabor components
+%                   needed to obtain 16 orientation channels (theta =
+%                   0:pi/8:2*pi-pi/8);
+%           DC_thr  threshold value. Default equal to "0";
+%
+% FUNDAMENTAL NOTE: the orientation value, in this function, are defined
+% respect to the image reference system (centered at the top left). When
+% you plot the shape filter the (that uses this frame of reference)
+% orientation value is correct.
 
-% function IF = filt_sep_gabor(I,fname,DC_thr)
-%  
-
+%Set DC threshold
 if (nargin<3)
   DC_thr = 1e-10;
 end
@@ -16,12 +26,12 @@ clear fltr;
 
 n_orient = 16;
 
-[nr,nc,n_frames,side] = size(I);
+[nr,nc,n_frames] = size(I);
 padsize = floor(taps/2); 
-IF = zeros(nr,nc,n_orient,n_frames*side);
-I = reshape(I,nr,nc,n_frames*side);
+IF = zeros(nr,nc,n_orient,n_frames);
+I = reshape(I,nr,nc,n_frames);
 
-for ind = 1:n_frames*side
+for ind = 1:n_frames
 
 
       %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,16 +51,6 @@ for ind = 1:n_frames*side
       
       IF(:,:,9,ind) = complex(even,-odd);
       clear even odd F1Y;
-
-%         % pi
-% 
-%       F1Y = conv2b(I(:,:,ind),F(1,:).',3);
-%       even = conv2b(F1Y,F(2,:),3);
-%       odd = -(conv2b(F1Y,F(3,:),3));
-% 
-%       IF(:,:,9,ind) = complex(even,odd);
-% 
-%       clear even odd F1Y;
 
       % pi/2
 
@@ -153,7 +153,7 @@ for ind = 1:n_frames*side
 
       IF(:,:,2,ind) = complex(even,odd);
 
-        % 9pi/8
+      % 9pi/8
 
       even = F8YF6X - F9YF7X;
       odd = -(F9YF6X + F8YF7X);
@@ -167,7 +167,7 @@ for ind = 1:n_frames*side
 
       IF(:,:,8,ind) = complex(even,odd);
 
-        % 15pi/8
+      % 15pi/8
 
       even = F8YF6X + F9YF7X;
       odd = -(F9YF6X - F8YF7X);
@@ -198,7 +198,7 @@ for ind = 1:n_frames*side
 
       IF(:,:,4,ind) = complex(even,odd);
 
-        % 11pi/8
+      % 11pi/8
 
       even = F6YF8X - F7YF9X;
       odd = -(F7YF8X + F6YF9X);
@@ -212,7 +212,7 @@ for ind = 1:n_frames*side
 
       IF(:,:,6,ind) = complex(even,odd);
 
-        % 13pi/8
+      % 13pi/8
 
       even = F6YF8X + F7YF9X;
       odd = -(F7YF8X - F6YF9X);
@@ -223,17 +223,16 @@ for ind = 1:n_frames*side
 
 end
 
-
-IF = reshape(IF,nr,nc,n_orient,n_frames,side);
+IF = reshape(IF,nr,nc,n_orient,n_frames);
 invalid = (abs(real(IF))<DC_thr) | (abs(imag(IF))<DC_thr);
 % IF(invalid) = NaN;
 IF(invalid) = 0;
 
-G_even=real(IF);
-G_odd=imag(IF);
+G_even = real(IF);
+G_odd = imag(IF);
 clear IF;
-IF{1}=G_even;
-IF{2}=G_odd;
+IF{1} = G_even;
+IF{2} = G_odd;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

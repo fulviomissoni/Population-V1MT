@@ -1,4 +1,4 @@
-function varargout = surf_polar(I,az,el,normal,disp)
+function varargout = surfPolar(I,az,el,normal,disp)
 
 if nargin<2
     az=30;

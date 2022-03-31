@@ -20,7 +20,7 @@ for j=1:size(rx,2)
         axes('Position',[posx posy w h]);
         
         
-        [Iout,x,y] = surf_polar(response(:,:,i,j),0,90,0,s/(2*m));
+        [Iout,x,y] = surfPolar(response(:,:,i,j),0,90,0,s/(2*m));
         colormap(jet(256))
         %hold on maximal value
         hold on

@@ -1,4 +1,4 @@
-function F_new = filt_time(F,conv_type,filter_type,v,k0)
+function F_new = filtTime(F,conv_type,filter_type,v,k0)
 % convolution with temporal component of the spatio-temporal filter:
 %       F           convolution component with spatial filters
 %       conv_type   type of convolution ('full','same','valid') -> see conv2
@@ -11,16 +11,16 @@ function F_new = filt_time(F,conv_type,filter_type,v,k0)
 % Missoni Fulvio
 
 C_tmp = F{1};    S_tmp = F{2};
-[sy, sx, n_orient, n_frames, side]=size(C_tmp);
+[sy, sx, n_orient, n_frames] = size(C_tmp);
 %PERMUTATION
 %the convolution is computed in the {x_theta,t} domain* for each orientation
-%channel (theta) and each side (left or right)
-%*irrespective of y dimension. because each detectors is selective only for 
-%stimulus directed ortogonaly to the its orietation 
-C_tmp = permute(C_tmp,[2 4 1 3 5]);
-S_tmp = permute(S_tmp,[2 4 1 3 5]);
-C_tmp = reshape(C_tmp,sx,n_frames,sy*n_orient*side);
-S_tmp = reshape(S_tmp,sx,n_frames,sy*n_orient*side);
+%channel (theta) independently of y dimension, because each detectors is selective only for 
+%stimulus directed ortogonaly to the its orietation
+
+C_tmp = permute(C_tmp,[2 4 1 3]);
+S_tmp = permute(S_tmp,[2 4 1 3]);
+C_tmp = reshape(C_tmp,sx,n_frames,sy*n_orient);
+S_tmp = reshape(S_tmp,sx,n_frames,sy*n_orient);
 
 if (k0*v >= 1/2) %Nyquist Limit
     error('The maximum velocity detectable by these filters is v= %d\n',num2str((1/4)/k0))
@@ -109,37 +109,32 @@ for index=1:n_vel
         pe(isinf(pe)) = 1;
         po(isnan(po)) = 0;            
         po(isinf(po)) = 1;
-%         pe=pe'; po=po';
     end
-    %convolution
-%     disp('filt_time')
-% tic
-    for maps=1:sy*n_orient*side
-%         parfor j=1:side
+
+    for maps=1:sy*n_orient
             C(:,:,maps) =  (conv2(squeeze(C_tmp(:,:,maps)),pe,conv_type));
             S(:,:,maps) =  (conv2(squeeze(S_tmp(:,:,maps)),pe,conv_type));
             Ct(:,:,maps) =  (conv2(squeeze(C_tmp(:,:,maps)),po,conv_type));
             St(:,:,maps) =  (conv2(squeeze(S_tmp(:,:,maps)),po,conv_type));
-%         end
     end 
-% toc
+
     [dumb, c_frames, dumb2]=size(C);
-    %resort data
-    C = permute(reshape(C,sx,c_frames,sy,n_orient,side),[3 1 4 2 5]);
-    S = permute(reshape(S,sx,c_frames,sy,n_orient,side),[3 1 4 2 5]);
-    Ct= permute(reshape(Ct,sx,c_frames,sy,n_orient,side),[3 1 4 2 5]);
-    St= permute(reshape(St,sx,c_frames,sy,n_orient,side),[3 1 4 2 5]);
-    %OUTPUT (concatenate each velocity map along the sixth dimension)
+    %resort data organization
+    C = permute(reshape(C,sx,c_frames,sy,n_orient),[3 1 4 2]);
+    S = permute(reshape(S,sx,c_frames,sy,n_orient),[3 1 4 2]);
+    Ct= permute(reshape(Ct,sx,c_frames,sy,n_orient),[3 1 4 2]);
+    St= permute(reshape(St,sx,c_frames,sy,n_orient),[3 1 4 2]);
+    %OUTPUT (concatenate each velocity map along the fifth dimension)
     if index==1
         F_new{1} = C;
         F_new{2} = S;
         F_new{3} = Ct;
         F_new{4} = St;
     else
-        F_new{1} = cat(6,F_new{1},C);
-        F_new{2} = cat(6,F_new{2},S);
-        F_new{3} = cat(6,F_new{3},Ct);
-        F_new{4} = cat(6,F_new{4},St);
+        F_new{1} = cat(5,F_new{1},C);
+        F_new{2} = cat(5,F_new{2},S);
+        F_new{3} = cat(5,F_new{3},Ct);
+        F_new{4} = cat(5,F_new{4},St);
     end
     clear C S Ct St
 end

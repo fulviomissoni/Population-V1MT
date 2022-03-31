@@ -3,7 +3,7 @@
 %   SIMULARE DISPARITA' ORIZZONTALI E VERTICALI.
 
 
-function [OUT true] = random_dotMS(dx, dy, sx, sy, scale)
+function [OUT true] = randomDotMS(dx, dy, sx, sy, scale)
 
 
 dmax=ceil(max([abs(dx) abs(dy) 1])+3); %disparita' massima

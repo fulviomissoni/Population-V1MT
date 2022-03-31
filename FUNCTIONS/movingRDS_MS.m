@@ -1,6 +1,6 @@
-function OUT = moving_RDS_MS(samples_x,samples_y,dur,scale,velx,vely)
+function OUT = movingRDS_MS(samples_x,samples_y,dur,scale,velx,vely)
 
-[OUT] = random_dotMS(0, 0, samples_x, samples_y, scale);
+[OUT] = randomDotMS(0, 0, samples_x, samples_y, scale);
 OUT = OUT(:,:,1);
 for i=2:dur
     frame = circshift(OUT(:,:,i-1),[floor(vely) floor(velx)]);
