@@ -18,7 +18,7 @@ load(filename)
 nTheta_g = [6,7];
 nVel = 5; %vel stim tested -2pix/frames and -1.2 pix/frames
 nContr_g = 4; %contrast stim tested are grat1 = [0,0.2,0.4]; grat2 = [1,0.8,0.6];
-pop_resp{1} = squeeze(e(3,:,:,:));
+pop_resp{1} = squeeze(e(1,:,:,:));
 theta_cell_OUT = 0:pi/param.nOrient:pi-pi/param.nOrient;
 [xx,tt] = meshgrid(param.prefVel,theta_cell_OUT);
 sze = [param.nOrient,numel(param.prefVel),nTheta_g(1),nTheta_g(2),nVel,nContr_g];

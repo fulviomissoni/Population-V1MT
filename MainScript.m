@@ -1,5 +1,5 @@
 clear
-close all
+% close all
 clc
 
 addpath FUNCTIONS
@@ -32,9 +32,9 @@ v  = linspace(-1,1,11)*2;
 % kk = [-3 -1.5  0.5  1.5 3]; %Preferred velocity with Adelson_Bergen
 
 %NORMALIZATION VALUES
-alpha = [1;1e-4];
+alpha = [1;1];
 sigma_pool = 3;
-num_or_ch_pooled = 5;
+num_or_ch_pooled = 1;
 
 %Organize the input parameters for the functions
 param.spat_freq     = k0;               
@@ -48,7 +48,7 @@ param.sigma_pool    = sigma_pool;
 param.num_or_ch_pooled = num_or_ch_pooled;
 
 %% POP RESPONSE TO TYPE II PLAID
-stim = initStimulus(0,[3*pi/8 -3*pi/8],param.pref_vel(end),0.4);
+stim = initStimulus(0,[3*pi/8 -3*pi/8],param.pref_vel(end),0.2);
 stim.mode = 1;
 stim.disp = 0;
 
@@ -66,7 +66,7 @@ theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;
 W2 = exp(-(xx(:).*cos(tt(:)'-tt(:)) - xx(:)').^2/(2*0.25^2));
 W2 = W2 - eye(size(W2));
 
-pop_resp = squeeze(e(1,:,:));
+pop_resp = squeeze(e(2,:,:));
 sze = size(pop_resp);
 pop_resp_BioGautama = reshape((W2*reshape(pop_resp,sze(1)*sze(2),[])),sze);
 
@@ -137,7 +137,6 @@ pop_resp_V1MT = pop_resp_BioGautama;
 for indResp = 2:max_iteration
     %Apply my Weights
     %iterates mexican hat weigthing function
-    tmp = CT;
     CT = reshape(tmp,sze(1)*sze(2),[]);
     CT = CT./max(CT,[],1);
     CT(CT<th) = 0;
@@ -146,6 +145,7 @@ for indResp = 2:max_iteration
     %Thresholding
     CT = 1 ./(1+exp(-logistic_slope*(CT-logistic_center)));
     pop_resp_V1MT(:,:,indResp) = reshape(CT,sze);
+    tmp = CT;
 end
 
 %% VISUALIZE POP ACITIVITY

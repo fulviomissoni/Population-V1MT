@@ -108,12 +108,13 @@ for i = 1:2
     S = reshape(S,sy*sx*n_frames,n_orient,v);
     S = permute(S,[2 1 3]);
     S = reshape(S,n_orient,[]);
-    index_o = circshift(1:n_orient,3);
+%     index_o = circshift(1:n_orient,3);
+    index_o = 1:8;
     %orientation pooling
     for o = 1:n_orient
         tmp = S(index_o(1:num__or_ch_pooled),:);
         S(o,:) = sum(tmp);
-        index_o = circshift(index_o,-1);
+%         index_o = circshift(index_o,-1);
     end
     S = reshape(S,n_orient,sy*sx*n_frames,v);
     S = permute(S,[2 1 3]);
@@ -124,5 +125,4 @@ end
 
 for i=1:2
     C1{i} = squeeze(reshape(C1{i},sze));
-    C1{i}(isnan(C1{i})) = 0;
 end
