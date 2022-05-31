@@ -1,5 +1,5 @@
 clear
-% close all
+close all
 clc
 
 addpath FUNCTIONS
@@ -19,7 +19,7 @@ addpath FUNCTIONS
 %FILTER 43x43
 filter_file = 'FILTERS/Gt43B0.0208f0.063.mat';
 k0 = 0.063;             %SPATIAL FREQUENCY  [cycle/pix]
-samples = 420;          %STIMULUS DIMENSION [pix] 
+samples = 127;          %STIMULUS DIMENSION [pix] 
 %choice size big enough to obtain good tuning curves in response to RDS
 n_orient = 8;
 % RELATIVE BANDWIDTH => B=0.0208;
@@ -32,9 +32,9 @@ v  = linspace(-1,1,11)*2;
 % kk = [-3 -1.5  0.5  1.5 3]; %Preferred velocity with Adelson_Bergen
 
 %NORMALIZATION VALUES
-alpha = [1;1];
+alpha = [1,0.2];
 sigma_pool = 3;
-num_or_ch_pooled = 1;
+num_or_ch_pooled = [8,1];
 
 %Organize the input parameters for the functions
 param.spat_freq     = k0;               
@@ -48,33 +48,91 @@ param.sigma_pool    = sigma_pool;
 param.num_or_ch_pooled = num_or_ch_pooled;
 
 %% POP RESPONSE TO TYPE II PLAID
-stim = initStimulus(0,[3*pi/8 -3*pi/8],param.pref_vel(end),0.2);
-stim.mode = 1;
-stim.disp = 0;
+param.diff_c = 0:0.1:1;
+diff_c = param.diff_c;
+[contr,num_or_pool] = meshgrid(diff_c,num_or_ch_pooled);
+contr = contr(:);
+num_or_pool = num_or_pool(:);
+num_or_ch_pooled = param.num_or_ch_pooled;
+% num_or_pool = num_or_ch_pooled;
+for i=1:numel(num_or_pool)
+%      diff_c = contr(i); %contrast difference between gratings
+    stim = initStimulus(pi/4,[-3*pi/8, -pi/4],1.8,contr(i));
+    stim.mode = 1;
+    stim.disp = 0;
+    
+    %SIMULATION 
+    param.num_or_ch_pooled = num_or_pool(i);
+    [e,param] = motionPopV1MT(param,stim);
+    th = 2e-2;    
+    sze_e = size(e);
+    
+    %DISPLAY RESULTS
+    theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
+    [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
+    
+    %load tuning curves
+    load('SIMULATIONS/vel_tuning_polarRDS.mat','W')
+    W = W - W.*eye(size(W));
+%     W = W/max(W(:));
+    sigmaGabor = 0.5*4/3*xx(:)'; %sigma = 4/3*xx(:)';
+%     sigma = 0.25;
+    % W2 = exp(-(xx(:).*cos(tt(:)-tt(:)') - xx(:)').^2./(2*sigma.^2)); %Andre pesi originali (inviluppo exp(.))
+    % W2 = exp(-(xx).^2/(2*sigma^2)).*cos(tt(:)-tt(:)'); %Chessa-Solari model
+    % W2 = cos(xx(:).*cos(tt(:)'-tt(:)) - xx(:)'); %primo modello per introdurre l'opponenza (inviluppo coseno)
+    W2 = exp(-(xx(:).*cos(tt(:)'-tt(:)) - xx(:)').^2./(2*sigmaGabor.^2)).* ...
+    cos(2*pi*1./(4*xx(:)').*(xx(:).*cos(tt(:)'-tt(:)) - xx(:)')); %inviluppo Gabor per gestire la quantità e la posizione dei pesi negativi
+   % W2 = reshape(reshape(W2,8,11,8,11)./max(reshape(W2,8,11,8,11),[],4),88,88);
+    W2(isnan(W2)) = 0;
+    
+    pop_resp(:,:,i) = squeeze(e(2,:,:));
+    sze = size(squeeze(pop_resp(:,:,i)));
+    pop_resp_TunCurves(:,:,i) = reshape((W*reshape(squeeze(pop_resp(:,:,i)),sze(1)*sze(2),[])),sze);
+    pop_resp_BioGautama(:,:,i) = reshape((W2*reshape(squeeze(pop_resp(:,:,i)),sze(1)*sze(2),[])),sze);
+end
+param.num_or_ch_pooled = num_or_ch_pooled;
+OldFolder = cd;
+cd('SIMULATIONS\PlaidAnalysis')
+save('HIGHSIZEpop_resp_a2_0_2','pop_resp','pop_resp_BioGautama','pop_resp_TunCurves','W2','stim','param')
+cd(OldFolder)
+%% PLAID VELOCITY - POPULATION ENCODING
 
-%SIMULATION
-[e,param] = motionPopV1MT(param,stim);
-th = 2e-2;
+% Gaussian extension parameters
+sigma_r = 0.1;  
+% sigma_t = 0.4;  
+sigma_t = 0.4;
+K = 1.5; %inihibitory field size factor
+% Thresholding parameter
+logistic_slope = 9; 
+logistic_centre = 0.7;
+max_iteration = 6;
 
-sze_e = size(e);
-%DISPLAY RESULTS
-theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;
-
-[xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
-
-%Explicit intersection of constraints method to compute weigths
-W2 = exp(-(xx(:).*cos(tt(:)'-tt(:)) - xx(:)').^2/(2*0.25^2));
-W2 = W2 - eye(size(W2));
-
-pop_resp = squeeze(e(2,:,:));
-sze = size(pop_resp);
-pop_resp_BioGautama = reshape((W2*reshape(pop_resp,sze(1)*sze(2),[])),sze);
-
-%POP RESPONSE TO MOVING RDS (HORIZONTALLY AT 2 pix/frame)
-figure, plotPopResponse(pop_resp,0,0,param.pref_vel)
-title('POP RESPONSE')
-figure, plotPopResponse(pop_resp_BioGautama,0,0,param.pref_vel)
-title('POP RESP BIO GAUTAMA')
+[pop_resp_V1MT,vx,vy] = DecodeMxHat(pop_resp_BioGautama,param,sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
+% MEXICAN HAT WEIGHTS
+truetheta = repmat(stim.truetheta,[numel(diff_c), max_iteration, numel(num_or_ch_pooled)]);
+figure
+for i=1:max_iteration
+    subplot(1,max_iteration,i)
+    plot(diff_c,abs(rad2deg(squeeze(truetheta(:,i,:)-atan2(vy(:,i,:),vx(:,i,:))))))
+    ylim([0,max(max(max(abs(rad2deg(squeeze(truetheta-atan2(vy,vx)))))))])
+    if i==1
+        ylabel('\Delta\theta')
+    end
+    if i==ceil(max_iteration/2)
+        xlabel('\Deltac')
+    end
+    if i==max_iteration
+        legend(['numOrPooled = ',num2str(param.num_or_ch_pooled(1))],['numOrPooled = ',num2str(param.num_or_ch_pooled(2))])
+    end
+%     pause
+end
+%SAVE
+% saveas(gcf,'angle error plot','fig')
+% 
+figure, h=plot(diff_c,abs(rad2deg(squeeze(truetheta(:,:,1)-atan2(vy(:,:,1),vx(:,:,1))))));
+title('numOrPooled = 1')
+figure, plot(diff_c,abs(rad2deg(squeeze(truetheta(:,:,2)-atan2(vy(:,:,2),vx(:,:,2))))))
+title('numOrPooled = 8')
 
 %% EXAMPLE: POP ACTIVITY ON SET OF TYPE II PLAID (WITH DIFFERENTS VEL VECTOR; ALL COMBINATIONS)
 
@@ -94,85 +152,38 @@ stim.disp = 0; %set to 1 to show visual stimulus in a figure
 %% SIMULATION
 
 lambda = [0,1e-6,1e-5,1e-4,1e-3,1e-2,1e-1,1,1e1,1e2];
-for i = 1:numel(lambda)
-    param.norm_param = [1;lambda(i)];
+for j = 1:numel(lambda)
+    param.norm_param = [1;lambda(j)];
     [e, param] = motionPopV1MT(param,stim);
     th = 2e-2;
     %SAVE DATA
     path = 'SIMULATIONS';
     OldFolder = cd;
     cd(path);
-    filename = ['Vel_tuning_PlaidII_lambda',num2str(lambda(i)),'_diffContrasts'];
+    filename = ['Vel_tuning_PlaidII_lambda',num2str(lambda(j)),'_diffContrasts'];
     save(filename,'e','param','stim','-v7.3')
     cd(OldFolder)
 end
 
-%% PLAID VELOCITY - POPULATION ENCODING
-% MEXICAN HAT WEIGHTS
-% Gaussian extension parameters
-sigma_r = 0.1;  
-sigma_t = 0.4;  
-K = 1.5; %inihibitory field size factor
-% Thresholding parameter
-logistic_slope = 9;  
-logistic_center = 0.7;
-
-[xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
-tt = tt + pi*(xx<0);
-xx = abs(xx);
-dx = xx(:).*cos(tt(:));
-dy = xx(:).*sin(tt(:));
-X = ((xx(:) - xx(:)').^2) / sigma_r^2 + ((tt(:) - tt(:)').^2) / sigma_t^2;
-%MEXICAN HAT
-MX = 1/(2*pi*sigma_r*sigma_t)*exp(-X/2) - ...
-    1/(2*pi*K^2*sigma_r*sigma_t)*exp(-X/(2*K^2));
-MX = MX./max(MX,[],'all');
-
-%Max number of recurrency iteration
-max_iteration = 10;
-
-tmp = pop_resp_BioGautama;
-%organize population responses
-pop_resp_V1MT = pop_resp_BioGautama;
-for indResp = 2:max_iteration
-    %Apply my Weights
-    %iterates mexican hat weigthing function
-    CT = reshape(tmp,sze(1)*sze(2),[]);
-    CT = CT./max(CT,[],1);
-    CT(CT<th) = 0;
-    CT = MX*CT;
-    CT = (CT./max(CT,[],1));
-    %Thresholding
-    CT = 1 ./(1+exp(-logistic_slope*(CT-logistic_center)));
-    pop_resp_V1MT(:,:,indResp) = reshape(CT,sze);
-    tmp = CT;
-end
-
-%% VISUALIZE POP ACITIVITY
-[rho, theta] = meshgrid(param.pref_vel,linspace(0,pi,n_orient+1));
-
-for j=1:max_iteration
-    subPopResp = pop_resp_V1MT(:,:,j);
-    figure, plotPopResponse(subPopResp,0,0,param.pref_vel)
-    colorbar
-    
-    M = sum(sum(subPopResp));
-    %centre of mass decoding
-    vx = sum(sum(subPopResp.*(rho(1:8,:).*cos(theta(1:8,:)))))/M;
-    vy = sum(sum(subPopResp.*(rho(1:8,:).*sin(theta(1:8,:)))))/M;
-    hold on, plot(vx/2,vy/2,'k*')
-end
-
+figure, plot(diff_c,abs(rad2deg(repmat(stim.truetheta,[numel(diff_c) numel(num_or_ch_pooled)])-atan2(vy,vx))))
 %%  LOCAL FUNCTIONS
-function stim = initStimulus(truetheta,theta,vpld,diff_contrast)
+%initialize stimulus parameters
+function stim = initStimulus(truetheta,theta,vpld,varargin)
+    if numel(varargin)==2
+        c(1) = varargin{1};
+        c(2) = varargin{2};
+    end
+    if numel(varargin)==1
+        c = 0.25+[-varargin{1}/4,varargin{1}/4];
+    end
     stim.type = 'plaid';
     stim.truetheta =  truetheta(:); %true orientation
     stim.theta_g = [theta]; %true orientation
     stim.vel_stim = [vpld(:)];
-    [x, y, z, c1] = ndgrid(stim.truetheta, stim.theta_g(:,1), stim.vel_stim, 0.5-diff_contrast/2); 
+    [x, y, z, c1] = ndgrid(stim.truetheta, stim.theta_g(:,1), stim.vel_stim, c(1));
     y = pagetranspose(y);   %pagetranspose serve per rendere le grid create con ndgrid nello stesso ordine dei meshgrid
     c1 = pagetranspose(c1);
-    [stim.truetheta, y2, stim.vel_stim,c2] = ndgrid(stim.truetheta, stim.theta_g(:,2), stim.vel_stim, 0.5+diff_contrast/2);
+    [stim.truetheta, y2, stim.vel_stim,c2] = ndgrid(stim.truetheta, stim.theta_g(:,2), stim.vel_stim, c(2));
     stim.truetheta = pagetranspose(stim.truetheta);
     y2 = pagetranspose(y2);
     stim.vel_stim = pagetranspose(stim.vel_stim);
@@ -192,3 +203,5 @@ function stim = initStimulus(truetheta,theta,vpld,diff_contrast)
     stim.mode = 1;
     stim.disp = 0; %set to 1 to show visual stimulus in a figure
 end
+%% reshape stimulus function
+%reshape parameters, from ngrid to n-d matrices

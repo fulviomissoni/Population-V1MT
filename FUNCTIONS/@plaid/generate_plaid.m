@@ -70,7 +70,7 @@ function II = analytic_express(pl)
 
         pRe = reshape((pR1.*pl.alpha+(1-pl.alpha).*pR2),length(xx),length(yy));
         pRe = imfilter(pRe,fspecial('gaussian',ceil(length(xx)/3)));
-        pRe(ap_mask)=0.5;
+        pRe(ap_mask)=ceil(mean([c1,c2]));
         i=i+1;
         II(:,:,i) = pRe;
     end
@@ -178,11 +178,11 @@ function [C,R,CS]=grating_geometry(theta)
 % Define geometry of plaid movements
 % theta = -theta;
 % m = C*v
+% theta =  ( pi/2 - theta ) ;
 C = [cos(theta)^2 sin(theta)*cos(theta); ...
       sin(theta)*cos(theta) sin(theta)^2];
 
 
-% For noise model
 R = [cos(theta) -sin(theta);...
       sin(theta) cos(theta)]';
   

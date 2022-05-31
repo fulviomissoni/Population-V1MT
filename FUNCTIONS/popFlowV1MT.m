@@ -57,7 +57,7 @@ function [C1] = populationV1MT(G,param)
 % population activity of V1-like cells and motion energy detectors (C1)
 alpha = param.norm_param;
 sigma_pool = param.sigma_pool;
-num__or_ch_pooled = param.num_or_ch_pooled;
+num_or_ch_pooled = param.num_or_ch_pooled;
 
 [sy, sx, n_frames, n_orient, v] = size(G{1});
 sze = size(G{1});
@@ -76,7 +76,6 @@ S0 = cell(8,1);
 for i=1:4
     S0{i} = zeros(sy*sx*n_frames*n_orient*v,1);
 end
-
 
 %SPATIO TEMPORAL ORIENTED FILTERS
 S0{1} = S+Ct;
@@ -104,22 +103,43 @@ for i = 1:2
         tmp2 = imgaussfilt(tmp,sigma_pool);
         S(:,:,p) = tmp2;
     end
-    C1{i} = reshape(C1{i},sy*sx*n_frames*n_orient,v);
+    C1{i} = reshape(C1{i},1,[]);
     S = reshape(S,sy*sx*n_frames,n_orient,v);
-    S = permute(S,[2 1 3]);
-    S = reshape(S,n_orient,[]);
-%     index_o = circshift(1:n_orient,3);
+    S = permute(S,[2 3 1]);
+%     S = reshape(S,n_orient,[]);
     index_o = 1:8;
+    tmp = S;
+    m = 1/mean(mean(mean((S))));
+%     a2 = 1;
+%     a2 = 1/max(max(S));
+
     %orientation pooling
-    for o = 1:n_orient
-        tmp = S(index_o(1:num__or_ch_pooled),:);
-        S(o,:) = sum(tmp);
-%         index_o = circshift(index_o,-1);
+    if num_or_ch_pooled == 8
+        S = sum(sum(S,2),1);
+        S = repmat(S,[n_orient v 1]);
     end
-    S = reshape(S,n_orient,sy*sx*n_frames,v);
-    S = permute(S,[2 1 3]);
-    S = reshape(S,sy*sx*n_frames*n_orient,v);
-    C1{i} = C1{i}./(a1 + a2*S);
+    if num_or_ch_pooled == 1
+        S = sum(S,2);
+        S = repmat(S,[1 v 1]);
+    end
+%     if num_or_ch_pooled~=8
+%         index_o = circshift(index_o,floor(num_or_ch_pooled/2));
+%         for o = 1:n_orient  
+%             S(o,:) = sum(tmp(index_o(1:1+num_or_ch_pooled-1),:));
+%             index_o = circshift(index_o,-floor(num_or_ch_pooled/2));
+%         end
+%     end
+%     if num_or_ch_pooled==8
+%         S = repmat(sum(tmp),[n_orient,1]);
+%     end
+%     if num_or_ch_pooled==1
+%         S = tmp;
+%     end
+    S = reshape(S,n_orient,v,sy*sx*n_frames);
+    S = permute(S,[3 1 2]);
+    S = reshape(S,1,[]);
+    
+    C1{i} = C1{i}./(a1 + a2*m*S);
     C1{i}(isnan(C1{i})) = 0;
 end
 

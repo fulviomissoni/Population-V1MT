@@ -92,7 +92,7 @@ for i=1:size(II,1)
         %select input
         if isa(II{i,j},'plaid')
             tmp = generate_plaid(II{i,j});
-            tmp = tmp(180:end-180,180:end-180,:);
+%             tmp = tmp(180:end-180,180:end-180,:);
             I = tmp;
         else
             I = zeros(size(II{i,j}));
