@@ -14,7 +14,7 @@ K = 1.5; %inihibitory field size factor
  
 logistic_slope = 8;
 logistic_centre = 0.65;
-max_iteration = 15;
+max_iteration = 105;
 %
 theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
 [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
@@ -32,27 +32,28 @@ PR_norm = pop_resp./mean(mean(pop_resp));
 sz = size(PR_norm);
 MT_norm = reshape(W2*reshape(PR_norm,sz(1)*sz(2),[]),sz);
 
-stimIdx = find(param.diff_c == 0);
-normIdx = 1;
+stimIdx = param.diff_c == 0; % I will take a plaid made by gratings at same contrast levels
+normIdx = 2;
 [PR_decoded] = DecodeMxHat(squeeze(MT_norm(:,:,normIdx,stimIdx)),param,sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
 fig=figure; plotPopResponse(squeeze(PR_decoded(:,:,max_iteration)),param.pref_vel)
 set(gca,'Position',[0 0 1 1])
 axis equal
 colormap bone
-% saveas(gcf,"MT_P_popResp_PlaidII_Test_noNorm.pdf")
-saveas(gcf,"MT_P_popResp_PlaidII_Test_noNorm.png")
-savefig("MT_P_popResp_PlaidII_Test_noNorm")
+title('Test Plaid - ')
+% % saveas(gcf,"MT_P_popResp_PlaidII_Test_noNorm.pdf")
+% saveas(gcf,"MT_P_popResp_PlaidII_Test_noNorm.png")
+% savefig("MT_P_popResp_PlaidII_Test_noNorm")
 % colorbar
 
-stimIdx = find(param.diff_c == 0.5);
+stimIdx = param.diff_c == 0.5;
 [PR_decoded] = DecodeMxHat(squeeze(MT_norm(:,:,normIdx,stimIdx)),param,sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
 fig=figure; plotPopResponse(squeeze(PR_decoded(:,:,max_iteration)),param.pref_vel)
 set(gca,'Position',[0 0 1 1])
 colormap bone
 axis equal
-% saveas(gcf,"MT_P_popResp_PlaidII_Ref_noNorm.pdf")
-saveas(gcf,"MT_P_popResp_PlaidII_Ref_noNorm.png")
-savefig("MT_P_popResp_PlaidII_Ref_noNorm")
+% % saveas(gcf,"MT_P_popResp_PlaidII_Ref_noNorm.pdf")
+% saveas(gcf,"MT_P_popResp_PlaidII_Ref_noNorm.png")
+% savefig("MT_P_popResp_PlaidII_Ref_noNorm")
 
 % colorbar
 %% psychometric
@@ -69,8 +70,8 @@ yticks([0.5,0.75,1])
 % axis equal
 set(gca,'Color','none')
 box off
-
-saveas(gcf,"psychometric_function",'fig')
-%export without background color
-fig2svg("pscychometric_function.svg",gcf)
-% saveas(gcf,"psychometric_function",'png')
+% 
+% saveas(gcf,"psychometric_function",'fig')
+% %export without background color
+% fig2svg("pscychometric_function.svg",gcf)
+% % saveas(gcf,"psychometric_function",'png')

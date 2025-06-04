@@ -1,3 +1,5 @@
+%Run simulations 
+
 clear
 close all
 clc
@@ -93,81 +95,8 @@ end
 param.num_or_ch_pooled = num_or_ch_pooled;
 OldFolder = cd;
 cd('SIMULATIONS\PlaidAnalysis')
-save('HIGHSIZEpop_resp_a2_0_2','pop_resp','pop_resp_BioGautama','pop_resp_TunCurves','W2','stim','param')
+dt = datetime('now');
+str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
+namesim = ['HIGHSIZEpop_resp_a2_0_2',str];
+save(namesim,'pop_resp','pop_resp_BioGautama','pop_resp_TunCurves','W2','stim','param')
 cd(OldFolder)
-%% PLAID VELOCITY - POPULATION ENCODING
-
-% Gaussian extension parameters
-sigma_r = 0.1;  
-% sigma_t = 0.4;  
-sigma_t = 0.4;
-K = 1.5; %inihibitory field size factor
-% Thresholding parameter
-logistic_slope = 9; 
-logistic_centre = 0.7;
-max_iteration = 6;
-
-[pop_resp_V1MT,vx,vy] = DecodeMxHat(pop_resp_BioGautama,param,sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
-% MEXICAN HAT WEIGHTS
-truetheta = repmat(stim.truetheta,[numel(diff_c), max_iteration, numel(num_or_ch_pooled)]);
-figure
-for i=1:max_iteration
-    subplot(1,max_iteration,i)
-    plot(diff_c,abs(rad2deg(squeeze(truetheta(:,i,:)-atan2(vy(:,i,:),vx(:,i,:))))))
-    ylim([0,max(max(max(abs(rad2deg(squeeze(truetheta-atan2(vy,vx)))))))])
-    if i==1
-        ylabel('\Delta\theta')
-    end
-    if i==ceil(max_iteration/2)
-        xlabel('\Deltac')
-    end
-    if i==max_iteration
-        legend(['numOrPooled = ',num2str(param.num_or_ch_pooled(1))],['numOrPooled = ',num2str(param.num_or_ch_pooled(2))])
-    end
-%     pause
-end
-%SAVE
-% saveas(gcf,'angle error plot','fig')
-% 
-figure, h=plot(diff_c,abs(rad2deg(squeeze(truetheta(:,:,1)-atan2(vy(:,:,1),vx(:,:,1))))));
-title('numOrPooled = 1')
-figure, plot(diff_c,abs(rad2deg(squeeze(truetheta(:,:,2)-atan2(vy(:,:,2),vx(:,:,2))))))
-title('numOrPooled = 8')
-
-%% EXAMPLE: POP ACTIVITY ON SET OF TYPE II PLAID (WITH DIFFERENTS VEL VECTOR; ALL COMBINATIONS)
-
-%STIMULUS DEFINITION
-truetheta = 0;
-plaid_vel = param.pref_vel(1:5);
-[theta1, theta2] = meshgrid(linspace(-3*pi/8,3*pi/8,7));
-theta_g = [theta1(:), theta2(:)];
-theta_g(1:8:end,:) = [];
-%differences in contrast sensitivity
-diff_contrast = 0:0.2:0.6;
-stim = initStimulus(truetheta(:),theta_g,plaid_vel,diff_contrast);
-
-stim.dur = 47; %duration in frame
-stim.mode = 1;
-stim.disp = 0; %set to 1 to show visual stimulus in a figure
-%% SIMULATION
-
-lambda = [0,1e-6,1e-5,1e-4,1e-3,1e-2,1e-1,1,1e1,1e2];
-for j = 1:numel(lambda)
-    param.norm_param = [1;lambda(j)];
-    [e, param] = motionPopV1MT(param,stim);
-    th = 2e-2;
-    %SAVE DATA
-    path = 'SIMULATIONS';
-    OldFolder = cd;
-    cd(path);
-    filename = ['Vel_tuning_PlaidII_lambda',num2str(lambda(j)),'_diffContrasts'];
-    save(filename,'e','param','stim','-v7.3')
-    cd(OldFolder)
-end
-
-figure, plot(diff_c,abs(rad2deg(repmat(stim.truetheta,[numel(diff_c) numel(num_or_ch_pooled)])-atan2(vy,vx))))
-%%  LOCAL FUNCTIONS
-%initialize stimulus parameters
-
-%% reshape stimulus function
-%reshape parameters, from ngrid to n-d matrices

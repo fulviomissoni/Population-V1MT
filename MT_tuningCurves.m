@@ -39,7 +39,7 @@ TC_MT = permute(PR_MT,[3,4,1,2]);
 figure, plotPopResponse(squeeze(TC_MT(:,:,idx_o,idx_v)),param.prefVel)
 title('MT Pattern Tuning Curve')
 figure, plotPopResponse(squeeze(PR_MT(:,:,idx_o,idx_v)),param.prefVel)
-title('MT response')
+title('MT Pattern response')
 %% reorganize to have 16 orientation channels
 
 myTC_MT = squeeze(TC_MT(:,:,idx_o,idx_v));

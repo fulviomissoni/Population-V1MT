@@ -34,6 +34,7 @@ x = linspace(min(disp),max(disp),11);
 % imagesc(y,x,Iout)
 [x,y] = meshgrid(x,y);
 g =surf(Xout,Yout,Iout);
+set(g,'FaceColor','interp','EdgeColor','none')
 % set(g,'FaceColor',[1,1,1])
 axis off
 axis xy

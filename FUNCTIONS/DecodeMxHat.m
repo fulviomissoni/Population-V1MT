@@ -6,7 +6,7 @@ function [pop_resp_V1MT, vx, vy] = DecodeMxHat(pop_resp,param,sigma_r,sigma_t,K,
 %each iteration the activity is thresholded with logistic function defined
 %by (logistic_slope and logistic_centre parameters)
 %
-% 
+% n_orient x n_vel x = size(pop_resp) 
 %%
 % Set parameters
 th = 2e-2;

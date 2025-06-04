@@ -1,6 +1,6 @@
 function C1 = popFlowV1MT(II,param)
 % This function computes a distributed analysis of a stack of visual images 
-% by means of a population of motion energy detectors. Th
+% by means of a population of motion energy detectors. 
 %
 % -) [rows,cols,n_frames] = size(II); represents the stereo-input
 % -) 'thr' contains the threshold values below which activity
