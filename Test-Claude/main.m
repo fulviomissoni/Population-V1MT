@@ -56,11 +56,14 @@ diff_c = param.diff_c;
 [contr,alpha2] = meshgrid(diff_c,a2);
 contr = contr(:);
 alpha2 = alpha2(:);
+vpld = 1.8; %deg/sec (?)
 
 %STIM
-stim = initStimulus(pi/4,[-3*pi/8, -pi/4],1.8,contr(i));
-    stim.mode = 1;
-    stim.disp = 0;
+stim = initStimulus(pi/4,[-3*pi/8, -pi/4],vpld,contr);
+stim.mode = 1;
+stim.disp = 0;
+
+II = makePlaids()
 
 results = run_parameter_sweep_vectorized(II, your_base_param, ...
     'contr', contr, 'norm_alpha', alpha2);
