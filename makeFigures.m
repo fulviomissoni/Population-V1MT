@@ -33,7 +33,7 @@ sz = size(PR_norm);
 MT_norm = reshape(W2*reshape(PR_norm,sz(1)*sz(2),[]),sz);
 
 stimIdx = param.diff_c == 0; % I will take a plaid made by gratings at same contrast levels
-normIdx = 2;
+normIdx = 1;
 [PR_decoded] = DecodeMxHat(squeeze(MT_norm(:,:,normIdx,stimIdx)),param,sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
 fig=figure; plotPopResponse(squeeze(PR_decoded(:,:,max_iteration)),param.pref_vel)
 set(gca,'Position',[0 0 1 1])

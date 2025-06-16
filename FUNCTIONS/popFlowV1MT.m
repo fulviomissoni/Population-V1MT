@@ -94,28 +94,34 @@ clear S0
 a1 = alpha(1);
 a2 = alpha(2);
 
+%Memory allocation:
+
 for i = 1:2
-    C1{i} = reshape(C1{i},sy,sx,n_frames*n_orient*v);
+    C1_pooled{i} = reshape(C1{i},sy,sx,n_frames*n_orient*v);
     S = zeros(sy,sx,n_frames*n_orient*v);
     %spatial pooling of normalization pool
     for p = 1:n_frames*n_orient*v
-        tmp = C1{i}(:,:,p);
+        tmp = C1_pooled{i}(:,:,p);
         tmp2 = imgaussfilt(tmp,sigma_pool);
         S(:,:,p) = tmp2;
+        C1_pooled{i}(:,:,p) = tmp2;
     end
-    C1{i} = reshape(C1{i},1,[]);
+    C1_pooled{i} = reshape(C1_pooled{i},1,[]);
+    % C1{i} = reshape(C1{i},1,[]);
+
     S = reshape(S,sy*sx*n_frames,n_orient,v);
     S = permute(S,[2 3 1]);
 %     S = reshape(S,n_orient,[]);
-    index_o = 1:8;
-    tmp = S;
-    m = 1/mean(mean(mean((S))));
+    % index_o = 1:8;
+    % tmp = S;
+    m = 1/mean(S,'all');
+
 %     a2 = 1;
 %     a2 = 1/max(max(S));
 
     %orientation pooling
     if num_or_ch_pooled == 8
-        S = sum(sum(S,2),1);
+        S = sum(S,[1,2]);
         S = repmat(S,[n_orient v 1]);
     end
     if num_or_ch_pooled == 1
@@ -139,7 +145,7 @@ for i = 1:2
     S = permute(S,[3 1 2]);
     S = reshape(S,1,[]);
     
-    C1{i} = C1{i}./(a1 + a2*m*S);
+    C1{i} = C1_pooled{i}./(a1 + a2*m*S);
     C1{i}(isnan(C1{i})) = 0;
 end
 

@@ -5,6 +5,13 @@ close all
 clc
 
 addpath FUNCTIONS
+
+% NOTE: stim.dur is something that I used to initialise the stimulus
+% duration of the used stimulus 
+% As regarding the plaid (I used the script initPlaidStimulus) the dur is
+% set by the function at 43; for the RDS I will set at the same length;
+% !!in any case it should at least match the
+% length of the temporal profile of the cells
 %%  POPULATION INIT
 
 %SPATIAL FILTERS
@@ -15,6 +22,7 @@ addpath FUNCTIONS
 % k0=0.25;        %SPATIAL FREQUENCY
 % n_orient = 8;
 % samples = 11;
+% filter_sample = 11;
 % % samples = 15;
 % % RELATIVE BANDWIDTH => B=0.0833;
 
@@ -24,6 +32,7 @@ k0 = 0.063;             %SPATIAL FREQUENCY  [cycle/pix]
 samples = 127;          %STIMULUS DIMENSION [pix] 
 %choice size big enough to obtain good tuning curves in response to RDS
 n_orient = 8;
+filter_sample = 43;
 % RELATIVE BANDWIDTH => B=0.0208;
 
 %TEMPORAL FILTER
@@ -34,7 +43,8 @@ v  = linspace(-1,1,11)*2;
 % kk = [-3 -1.5  0.5  1.5 3]; %Preferred velocity with Adelson_Bergen
 
 %NORMALIZATION VALUES
-alpha = [1,0.2];
+% alpha = [1,0.2];
+
 sigma_pool = 3;
 num_or_ch_pooled = [8,1];
 
@@ -45,27 +55,66 @@ param.pref_vel      = v;
 param.temp_filt     = ft_choice;      
 param.spatial_filt  = filter_file;    
 param.samples       = samples;        
-param.norm_param    = alpha;  
+param.filter_sample = filter_sample;
+% param.norm_param    = alpha;  
 param.sigma_pool    = sigma_pool;
-param.num_or_ch_pooled = num_or_ch_pooled;
+% param.num_or_ch_pooled = num_or_ch_pooled;
 
-%% POP RESPONSE TO TYPE II PLAID
-param.diff_c = 0:0.1:1;
+param.diff_c = linspace(0,1,11);
 diff_c = param.diff_c;
-[contr,num_or_pool] = meshgrid(diff_c,num_or_ch_pooled);
-contr = contr(:);
+vplaid = 1.8;
+truetheta = pi/6;
+
+[vgrat(:,:,1), vgrat(:,:,2)] = meshgrid(truetheta + pi/4, ...
+    truetheta + deg2rad(linspace(-45,75,3)));
+vgrat = reshape(vgrat,[],2);
+
+
+dt = datetime('now');
+str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
+%% POP RESPONSE TO TYPE II PLAID 
+% This part of the script just simulate the response of normalised V1
+% motion-detectors with different contrast levels plaid of type II 
+% -) Here we wanted to analyse the effect of normalisation as a function of
+% contrast level
+% diff_c is used to to simulated the different contrast levels
+% a2 to simulate the parameter in the formula of normalisation (Remember
+% was: C1 / (a1 + a2/mean(activity) * Sum of activity)
+% Sum of activity is modulated with num_or_ch_pooled to modulate the
+% normalisation selectivity - Here we just simulate from 8 (all population
+% = no selectivity) to 1 (extreme level)
+% MT selectivity is obtained with weights which we defined in different
+% ways -> see script MT_cells_from_Simulations to see how it works
+
+
+%normalisation parameters
+alpha2 = linspace(1,0,11);
+% alpha2 = 1;
+alpha1 = 0;
+ 
+[num_or_pool,a2] = meshgrid(num_or_ch_pooled,alpha2);
+% contr = contr(:);
 num_or_pool = num_or_pool(:);
-num_or_ch_pooled = param.num_or_ch_pooled;
+a2 = a2(:);
+% num_or_ch_pooled = param.num_or_ch_pooled;
 % num_or_pool = num_or_ch_pooled;
+
+%initialise the image
+totsim = cell(3,numel(num_or_pool));
+
 for i=1:numel(num_or_pool)
+    tic
 %      diff_c = contr(i); %contrast difference between gratings
-    stim = initStimulus(pi/4,[-3*pi/8, -pi/4],1.8,contr(i));
-    stim.mode = 1;
+    stim = initPlaidStimulus(truetheta,[vgrat(:,1), vgrat(:,2)],vplaid,diff_c(:));
+    stim.type = "plaid";
+    stim.mode = 1; %implementation mode (see GeneratePlaid)
     stim.disp = 0;
-    
+    stim.k_gauss = 0;
+
     %SIMULATION 
     param.num_or_ch_pooled = num_or_pool(i);
-    [e,param] = motionPopV1MT(param,stim);
+    param.norm_param = [alpha1, a2(i)];
+    [e,param] = motionPopV1MT(param,stim); % remember 'e' (population activity) will be a matrix of n_complex_cell X n_orient X n_vel X n_stim_parameters (in this case the length of diff_c)
     th = 2e-2;    
     sze_e = size(e);
     
@@ -73,30 +122,158 @@ for i=1:numel(num_or_pool)
     theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
     [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
     
-    %load tuning curves
-%     load('SIMULATIONS/vel_tuning_polarRDS.mat','W')
-%     W = W - W.*eye(size(W));
-% %     W = W/max(W(:));
-%     sigmaGabor = 0.5*4/3*xx(:)'; %sigma = 4/3*xx(:)';
-%     sigma = 0.25;
-    % W2 = exp(-(xx(:).*cos(tt(:)-tt(:)') - xx(:)').^2./(2*sigma.^2)); %Andre pesi originali (inviluppo exp(.))
-    % W2 = exp(-(xx).^2/(2*sigma^2)).*cos(tt(:)-tt(:)'); %Chessa-Solari model
-    % W2 = cos(xx(:).*cos(tt(:)'-tt(:)) - xx(:)'); %primo modello per introdurre l'opponenza (inviluppo coseno)
-    W2 = exp(-(xx(:).*cos(tt(:)'-tt(:)) - xx(:)').^2./(2*sigmaGabor.^2)).* ...
-    cos(2*pi*1./(4*xx(:)').*(xx(:).*cos(tt(:)'-tt(:)) - xx(:)')); %inviluppo Gabor per gestire la quantità e la posizione dei pesi negativi
-   % W2 = reshape(reshape(W2,8,11,8,11)./max(reshape(W2,8,11,8,11),[],4),88,88);
-    W2(isnan(W2)) = 0;
-    
-    pop_resp(:,:,i) = squeeze(e(2,:,:));
-    sze = size(squeeze(pop_resp(:,:,i)));
-    pop_resp_TunCurves(:,:,i) = reshape((W*reshape(squeeze(pop_resp(:,:,i)),sze(1)*sze(2),[])),sze);
-    pop_resp_BioGautama(:,:,i) = reshape((W2*reshape(squeeze(pop_resp(:,:,i)),sze(1)*sze(2),[])),sze);
+    mypath = 'SIMULATIONS\PlaidAnalysis\';
+    namesimtmp = [mypath,'tmpSimulationTot_NormEffect_',num2str(i),'_',str];
+    save(namesimtmp,'e','stim','param')
+    totsim{1,i} = e;
+    totsim{2,i} = stim;
+    totsim{3,i} = param;
+    toc
+    disp(['Simulation ',num2str(i), ' finished'])
 end
+param.norm_param = [ repmat(alpha1,1,length(alpha2)), alpha2];
 param.num_or_ch_pooled = num_or_ch_pooled;
-OldFolder = cd;
-cd('SIMULATIONS\PlaidAnalysis')
-dt = datetime('now');
-str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
-namesim = ['HIGHSIZEpop_resp_a2_0_2',str];
-save(namesim,'pop_resp','pop_resp_BioGautama','pop_resp_TunCurves','W2','stim','param')
-cd(OldFolder)
+mypath = 'SIMULATIONS\PlaidAnalysis\';
+namesim = [mypath,'SimulationTot_NormEffect',str];
+
+save(namesim,'totsim')
+
+%% POP RESPONSE to PLAID II with some noise on it
+% Here we wanted to simulate what happen in the real-world. In the
+% real-word usually stimuli are not so sharp in frequency domain but there
+% is some noise (perceptual noise, noise in the background etc..)
+% So, we simulate response to plaid II with some noise on it.
+% To obtain the cell response we did the average on different locations
+% So I used a type II plaid of size 6 times the RF of the neuron and take the
+% average 
+% % % TO DO: EDIT MOTIONV1MT THE PART OF STIMULUS SELECTION
+
+filter_file = 'FILTERS/Gt43B0.0208f0.063.mat';
+k0 = 0.063;             %SPATIAL FREQUENCY  [cycle/pix]
+samples = 43;          %STIMULUS DIMENSION [pix] 
+%choice size big enough to obtain good tuning curves in response to RDS
+n_orient = 8;
+filter_sample = 43;
+% RELATIVE BANDWIDTH => B=0.0208;
+param.spat_freq     = k0;               
+param.n_orient      = n_orient;       
+param.pref_vel      = v;              
+param.temp_filt     = ft_choice;      
+param.spatial_filt  = filter_file;    
+param.samples       = samples;        
+param.filter_sample = filter_sample;
+% param.norm_param    = alpha;  
+param.sigma_pool    = sigma_pool;
+
+%norm parameters
+alpha2 = linspace(1,0,11);
+% alpha2 = 1;
+alpha1 = 0;
+[num_or_pool,a2] = meshgrid(num_or_ch_pooled,alpha2);
+% contr = contr(:);
+num_or_pool = num_or_pool(:);
+a2 = a2(:);
+% num_or_ch_pooled = param.num_or_ch_pooled;
+% num_or_pool = num_or_ch_pooled;
+
+%initialise the image
+totsim = cell(3,numel(num_or_pool));
+
+for i=1:numel(num_or_pool)
+    tic
+%      diff_c = contr(i); %contrast difference between gratings
+    stim = initPlaidStimulus(truetheta,[vgrat(:,1), vgrat(:,2)],vplaid,diff_c(:));
+    stim.type = "plaid_noise";
+    stim.mode = 1; %implementation mode (see GeneratePlaid)
+    stim.disp = 0;
+    stim.k_gauss = 1e6; % inverse of the blurring level
+    stim.sigma_noise = 0.1;
+
+
+    %SIMULATION 
+    param.num_or_ch_pooled = num_or_pool(i);
+    param.norm_param = [alpha1, a2(i)];
+    [e,param] = motionPopV1MT(param,stim); % remember 'e' (population activity) will be a matrix of n_complex_cell X n_orient X n_vel X n_stim_parameters (in this case the length of diff_c)
+    th = 2e-2;    
+    sze_e = size(e);
+    
+    %DISPLAY RESULTS
+    theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
+    [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
+    
+    mypath = 'SIMULATIONS\PlaidAnalysis\';
+    namesimtmp = [mypath,'tmpSimulationTot_NormEffect_',num2str(i),'_',str];
+    save(namesimtmp,'e','stim','param')
+    totsim{1,i} = e;
+    totsim{2,i} = stim;
+    totsim{3,i} = param;
+    toc
+    disp(['Simulation ',num2str(i), ' finished'])
+end
+param.norm_param = [ repmat(alpha1,1,length(alpha2)), alpha2];
+param.num_or_ch_pooled = num_or_ch_pooled;
+mypath = 'SIMULATIONS\PlaidAnalysis\';
+namesim = [mypath,'SimulationTot_NormEffect',str];
+
+save(namesim,'totsim')
+
+%% POP RESPONSE TO MOVING RDS
+% This is related to the same of step of before (having a broader frequency
+% response) and see what happen to the cells
+% % % % TO DO: I don't remember how I did
+
+
+% Parameters of the simulation
+clear stim
+stim.type = 'RDS_moving';
+stim.disp = 0;
+stim.truetheta = 0;
+stim.vgrat =  [vplaid , 0]; %velocity in px/sec; 
+stim.dur = 43;
+stim.theta_g = [0, 0];
+num_or_ch_pooled = 1;
+% param.diff_c = linspace(0,1,11);
+% diff_c = param.diff_c;
+%norm parameters
+% alpha2 = linspace(1,0,11);
+alpha2 = 1;
+alpha1 = 0;
+[num_or_pool,a2] = meshgrid(num_or_ch_pooled,alpha2);
+% contr = contr(:);
+num_or_pool = num_or_pool(:);
+a2 = a2(:);
+% num_or_ch_pooled = param.num_or_ch_pooled;
+% num_or_pool = num_or_ch_pooled;
+
+%initialise the image
+totsim = cell(3,numel(num_or_pool));
+
+for i=1:numel(num_or_pool)
+    tic
+    
+    %SIMULATION 
+    param.num_or_ch_pooled = num_or_pool(i);
+    param.norm_param = [alpha1, a2(i)];
+    [e,param] = motionPopV1MT(param,stim); % remember 'e' (population activity) will be a matrix of n_complex_cell X n_orient X n_vel X n_stim_parameters (in this case the length of diff_c)
+    th = 2e-2;    
+    sze_e = size(e);
+    
+    %DISPLAY RESULTS
+    theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
+    [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
+    
+    mypath = 'SIMULATIONS\RDSAnalysis\';
+    namesimtmp = [mypath,'tmpSimulationTot_NormEffect_',num2str(i),'_',str];
+    save(namesimtmp,'e','stim','param')
+    totsim{1,i} = e;
+    totsim{2,i} = stim;
+    totsim{3,i} = param;
+    toc
+    disp(['Simulation ',num2str(i), ' finished'])
+end
+param.norm_param = [ repmat(alpha1,1,length(alpha2)), alpha2];
+param.num_or_ch_pooled = num_or_ch_pooled;
+mypath = 'SIMULATIONS\RDSAnalysis\';
+namesim = [mypath,'SimulationTot_NormEffect',str];
+
+save(namesim,'totsim')

@@ -59,6 +59,10 @@ function II = analytic_express(pl)
     xxr1 = R1*[xx(:)';yy(:)'];
     xxr2 = R2*[xx(:)';yy(:)'];
 
+    %blur level
+    k_gauss = pl.k_gauss;
+
+
 % simulates plaid movements
     c1 = pl.c(1);
     c2 = pl.c(2);
@@ -69,12 +73,21 @@ function II = analytic_express(pl)
         pR2 = c2*(1+sign(cos(2*pi*pl.k(2)*xxr2(1,:)-(2*pi*pl.vgrat(2)*pl.k(2))*t)));
 
         pRe = reshape((pR1.*pl.alpha+(1-pl.alpha).*pR2),length(xx),length(yy));
-        pRe = imfilter(pRe,fspecial('gaussian',ceil(length(xx)/3)));
-        pRe(ap_mask)=ceil(mean([c1,c2]));
+        if ~(k_gauss == 0)
+            pRe = imfilter( ...
+                pRe, ...
+                fspecial('gaussian', ...
+                ceil(1/(k_gauss*pl.k(1))), ...
+                1/(k_gauss*pl.k(1))));
+        end
+
+        pRe(ap_mask) = ceil(mean([c1,c2]));
+
         i=i+1;
         II(:,:,i) = pRe;
     end
 end
+
 function [pRe,g1_rot,g2_rot]= im_rotate_mode(pl)
     warning('This modality of plaid generation has inexact velocity of plaid and gratings. This is due to the algorithm that is not suited for under-pixel movements.')
     prompt = 'Would you continue? [Y/n]\n';

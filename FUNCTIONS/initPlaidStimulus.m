@@ -1,4 +1,4 @@
-function stim = initStimulus(truetheta,theta,vpld,varargin)
+function stim = initPlaidStimulus(truetheta,theta,vpld,varargin)
     if numel(varargin)==2
         c(:,1) = varargin{1};
         c(:,2) = varargin{2};

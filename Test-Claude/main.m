@@ -63,9 +63,8 @@ stim = initStimulus(pi/4,[-3*pi/8, -pi/4],vpld,contr);
 stim.mode = 1;
 stim.disp = 0;
 
-II = makePlaids()
 
-results = run_parameter_sweep_vectorized(II, your_base_param, ...
+results = run_parameter_sweep_optimized(stim, param, ...
     'contr', contr, 'norm_alpha', alpha2);
 
 % Analisi automatica risultati

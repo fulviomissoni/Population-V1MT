@@ -25,5 +25,6 @@ p.alpha = arg.alpha;
 p.c = arg.contrast;
 p.pl_type = arg.pl_type;
 p.mode = arg.mode;
+p.k_gauss = arg.k_gauss;
 % from structure to class...
 p = class(p,'plaid');
