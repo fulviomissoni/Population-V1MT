@@ -2,7 +2,9 @@ function [varargout] = motionPopV1MT(param,stim)
 
 samples = param.samples;
 k0 = param.spat_freq;
-dur = stim.dur;
+%assuming same duration and type of stimuli
+dur = stim(1).dur;
+type = stim(1).type;
 if ~isfield(stim,'type')
     error('Define type of the stimulus!! Options are: moving grats, plaids, or moving RDS')
 end
@@ -14,21 +16,21 @@ field_names{2} = 'vgrat';
 argCheck(stim,field_names);
 %% Stimulus definition 
 stimuli = ["plaid","grat","RDS_moving","shift_grat","plaid_noise"];
-if ~sum(matches(stimuli,stim.type))
+if ~sum(matches(stimuli,type))
     error('Select from the possible stimuli:\n %s %s %s %s',stimuli{1},stimuli{2},stimuli{3},stimuli{4})
 end
     
-switch stim.type
+switch type
     case 'grat'
         II = sinGrating(samples,samples,dur,[0,0],stim.vgrat,k0,stim.theta_g);
     case 'plaid'
-        if ~isfield(stim,'pl_type')
-            pl_type = 1;
-        else 
-            pl_type = stim.pl_type;
-        end
+        % if ~isfield(stim,'pl_type')
+        %     pl_type = 1;
+        % else 
+        %     pl_type = stim.pl_type;
+        % end
         
-        for num_pld = 1:length(stim.truetheta)
+        for num_pld = 1:length(stim)
             %plaid object
             % arg.dur = dur;                              %aperture size      [pixs]
             % arg.apert_rad = ceil(samples/2)+2;          %aperture size      [pixs]
@@ -44,7 +46,7 @@ switch stim.type
             % arg.k_gauss = stim.k_gauss;                 %with k you can determine the size of the filter that will blur the image
             %                                             %size = 1 / (k_gauss * k0)
             %define plaid object
-            II{num_pld} = plaid(stim);
+            II{num_pld} = plaid(stim(num_pld));
             %generate plaid stimulus
         end
     case 'RDS_moving'         
@@ -109,22 +111,22 @@ switch stim.type
         end
 
 end
-if stim.disp == 1
-    prompt = 'Press any number to start visualization of visual stimulus\n';
-    start = input(prompt);
-    figure
-    if ~isempty(start)
-        tmp = II{1};
-        if isa(tmp,'plaid')
-            tmp = generate_plaid(tmp);
-        end
-        for i=1:dur
-            imagesc(squeeze(tmp(:,:,i)))
-            drawnow
-            pause(0.1)
-        end
-    end
-end
+% if stim.disp == 1
+%     prompt = 'Press any number to start visualization of visual stimulus\n';
+%     start = input(prompt);
+%     figure
+%     if ~isempty(start)
+%         tmp = II{1};
+%         if isa(tmp,'plaid')
+%             tmp = generate_plaid(tmp);
+%         end
+%         for i=1:dur
+%             imagesc(squeeze(tmp(:,:,i)))
+%             drawnow
+%             pause(0.1)
+%         end
+%     end
+% end
 
 %% motion-in-depth descriptors analysis - tuning curves
 n_vel = length(param.pref_vel);
@@ -150,7 +152,7 @@ for i=1:size(II,1)
         %population processing
         EC1 = popFlowV1MT(I,param);
         sze = size(EC1{1});
-        if strcmp(stim.type,"RDS_moving")
+        if strcmp(type,"RDS_moving")
             %then we have to make th average to get to actual neuron
             %response
             e(1,:,:,i,j) = squeeze(mean(EC1{1}( ...

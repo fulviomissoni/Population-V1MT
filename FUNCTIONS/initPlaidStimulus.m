@@ -1,68 +1,82 @@
 function stim = initPlaidStimulus(truetheta,theta,vpld,contr,k,samples,k_gauss,varargin)
-% arg.dur = dur;                              %aperture size      [pixs]
-% arg.apert_rad = ceil(samples/2)+2;          %aperture size      [pixs]
-% arg.truetheta = stim.truetheta(num_pld);    %true orientation   [rad]
-% arg.vpld = stim.vel_stim(num_pld);          %velocity amplitude [pixs/frame]
-% arg.k = [k0,k0];                            %spatial freq       [cycle/pix]
-% arg.vgrat = stim.vgrat(num_pld,:);          %gratings vel       [pixs/frame]
-% arg.theta_g = stim.theta_g(num_pld,:);      %gratings orient    [rad]
-% arg.alpha = 0.5;                            %alpha channel for transparency
-% arg.contrast                                %Contrast of two gratings (if
-%                                             numeric then is used as
-%                                             difference between the two
-%                                             gratings
-% arg.mode = stim.mode;                       %stimulus implementation algorithm
-% arg.pl_type = pl_type;                      %plaid type
-% arg.k_gauss = stim.k_gauss;                 %with k you can determine the size of the filter that will blur the image
-%                                             %size = 1 / (k_gauss * k0)
-% k:    spatial frequency of the gratings, if is scalar spatial frequency
-% will be the same for both
-%samples: size of the matrix in samples
-%alpha (optional): transparency
+p = inputParser;
+
+% Add the 'disp' parameter
+addParameter(p, 'disp', 0, @(x) isscalar(x) && (x == 0 || x == 1));
+
+% Add the 'type' parameter with a default value of 'plaid'
+addParameter(p, 'type', "plaid", @(x) ischar(x) || isstring(x));
+
+% Parse the input arguments
+parse(p, varargin{:});
+
+% Retrieve the results
+disp = p.Results.disp;
+type = p.Results.type;
 
 
 if isempty(varargin)
-    stim.alpha = 0.5;       %alpha channel for transparency
+    alpha = 0.5;       %alpha channel for transparency
 end
 
-    if size(contr,2)<2
-        c = 1/4+[-contr/4,contr/4];
-    end
-    if isscalar(k)
-        k0 = [k,k];
-    end
-    stim.type = 'plaid';
-    stim.truetheta =  truetheta(:); %true orientation
-    stim.theta_g = theta; %true orientation
-    stim.vel_stim = [vpld(:)];
-    [x, y, z, c1] = ndgrid(stim.truetheta, stim.theta_g(:,1), stim.vel_stim, c(:,1));
-    y = pagetranspose(y);   %pagetranspose serve per rendere le grid create con ndgrid nello stesso ordine dei meshgrid
-    c1 = pagetranspose(c1);
-    [stim.truetheta, y2, stim.vel_stim,c2] = ndgrid(stim.truetheta, stim.theta_g(:,2), stim.vel_stim, c(:,2));
-    stim.truetheta = pagetranspose(stim.truetheta);
-    y2 = pagetranspose(y2);
-    stim.vel_stim = pagetranspose(stim.vel_stim);
-    c2 = pagetranspose(c2);
-    stim.truetheta = stim.truetheta(:); 
-    stim.theta_g = stim.truetheta + [y(:) y2(:)];
-    stim.contrast = [c1(:),c2(:)];
-    stim.vel_stim = stim.vel_stim(:);
-    if size(stim.theta_g,2)==2
-        stim.ori = [cos( ...
-            wrapTo2Pi(stim.theta_g(:,1)-stim.truetheta)),... 
+if size(contr,2)<2
+    c = 1/4+[-contr/4,contr/4];
+end
+if isscalar(k)
+    k0 = [k,k];
+end
+
+%for each combination of theta_g, truetheta and contrast I need a stim
+%structure
+%Info about first grating
+[~, y, ~, c1] = ndgrid(truetheta, theta(:,1), vpld, c(:,1));
+y = pagetranspose(y);   % pagetranspose to match meshgrid order
+y = y(:);
+c1 = pagetranspose(c1);
+c1 = c1(:);
+
+%Info about second grating
+[truetheta, y2, vel_stim, c2] = ndgrid(truetheta, theta(:,2), vpld, c(:,2));
+truetheta = pagetranspose(truetheta);
+truetheta = truetheta(:); 
+y2 = pagetranspose(y2);
+y2 = y2(:);
+vel_stim = pagetranspose(vel_stim);
+vel_stim = vel_stim(:);
+c2 = pagetranspose(c2);
+c2 = c2(:);
+
+num_stim = length(truetheta); % Assuming truetheta defines the number of stimuli
+
+stim(num_stim) = struct(); % Preallocate the structure array
+
+for i = 1:num_stim
+    % stim(i).type = 'plaid';
+    stim(i).type = type;
+    stim(i).truetheta = truetheta(i); % true orientation
+    stim(i).theta_g = theta; % true orientation
+    % stim(i).vpld = vpld(i); % single numeric value for vpld
+    stim(i).theta_g = stim(i).truetheta + [y(i) y2(i)];
+    stim(i).contrast = [c1(i), c2(i)];
+    stim(i).vel_stim = vel_stim(i);
+    stim(i).vpld = stim(i).vel_stim; %useless????
+    if size(stim(i).theta_g,2) == 2
+        %vector projection
+        stim(i).ori = [cos( ...
+            wrapTo2Pi(stim(i).theta_g(1) - stim(i).truetheta)),... 
             cos( ...
-            wrapTo2Pi(stim.theta_g(:,2)-stim.truetheta))];
-        stim.vgrat = [stim.ori(:,1).*stim.vel_stim, stim.ori(:,2).*stim.vel_stim];
-        stim.vgrat = round(stim.vgrat,5,"decimals");
+            wrapTo2Pi(stim(i).theta_g(2) - stim(i).truetheta))];
+        stim(i).vgrat = [stim(i).ori(1) .* stim(i).vel_stim, stim(i).ori(2) .* stim(i).vel_stim];
+        stim(i).vgrat = round(stim(i).vgrat, 5, "decimals");
     else
-        stim.vgrat = stim.vel_stim;
+        stim(i).vgrat = stim(i).vel_stim;
     end
-    stim.dur = 43; %duration in frame
-    stim.mode = 1;
-    stim.disp = 0; %set to 1 to show visual stimulus in a figure
-    stim.k = k0;
-    stim.apert_rad = ceil(samples/2)+2;
-    stim.vpld = vpld;
-    stim.c = c; 
-    stim.k_gauss = k_gauss;
+    
+    stim(i).dur = 43; % duration in frame
+    stim(i).mode = 1;
+    stim(i).disp = disp; % Use the parsed display option
+    stim(i).k = k0; % single numeric value for k
+    stim(i).apert_rad = ceil(samples/2) + 2;
+    stim(i).k_gauss = k_gauss; % single numeric value for k_gauss
+    stim(i).alpha = alpha;
 end

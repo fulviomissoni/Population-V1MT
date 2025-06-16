@@ -88,14 +88,19 @@ str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
 
 
 %normalisation parameters
-alpha2 = linspace(1,0,11);
+%Note: I don't work on alpha1 in the normalisation stage (C1/(a1 + a2*pool))
+
+alpha2 = linspace(0,1,11);
+alpha1 = [1,zeros(1,10)];
 % alpha2 = 1;
-alpha1 = 0;
+% alpha1 = 0;
  
 [num_or_pool,a2] = meshgrid(num_or_ch_pooled,alpha2);
 % contr = contr(:);
 num_or_pool = num_or_pool(:);
 a2 = a2(:);
+a1 = zeros(length(a2),1);
+a1(a2 == 0) = 1;
 % num_or_ch_pooled = param.num_or_ch_pooled;
 % num_or_pool = num_or_ch_pooled;
 
@@ -107,14 +112,15 @@ for i=1:numel(num_or_pool)
 %      diff_c = contr(i); %contrast difference between gratings
 
     stim = initPlaidStimulus(truetheta,[vgrat(:,1), vgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0);
-    stim.type = "plaid";
-    stim.mode = 1; %implementation mode (see GeneratePlaid)
+    % stim(:).type = "plaid";
+    % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
     % stim.disp = 0;
     % stim.k_gauss = 0;
 
     %SIMULATION 
     param.num_or_ch_pooled = num_or_pool(i);
-    param.norm_param = [alpha1, a2(i)];
+
+    param.norm_param = [a1(i), a2(i)];
     [e,param] = motionPopV1MT(param,stim); % remember 'e' (population activity) will be a matrix of n_complex_cell X n_orient X n_vel X n_stim_parameters (in this case the length of diff_c)
     th = 2e-2;    
     sze_e = size(e);
@@ -132,7 +138,7 @@ for i=1:numel(num_or_pool)
     toc
     disp(['Simulation ',num2str(i), ' finished'])
 end
-param.norm_param = [ repmat(alpha1,1,length(alpha2)), alpha2];
+param.norm_param = [alpha1, alpha2];
 param.num_or_ch_pooled = num_or_ch_pooled;
 mypath = 'SIMULATIONS\PlaidAnalysis\';
 namesim = [mypath,'SimulationTot_NormEffect',str];
@@ -168,8 +174,7 @@ param.sigma_pool    = sigma_pool;
 
 %norm parameters
 alpha2 = linspace(1,0,11);
-% alpha2 = 1;
-alpha1 = 0;
+% alpha1 = 0;
 [num_or_pool,a2] = meshgrid(num_or_ch_pooled,alpha2);
 % contr = contr(:);
 num_or_pool = num_or_pool(:);
@@ -193,7 +198,12 @@ for i=1:numel(num_or_pool)
 
     %SIMULATION 
     param.num_or_ch_pooled = num_or_pool(i);
-    param.norm_param = [alpha1, a2(i)];
+    %Note: I don't work on alpha1
+    if a2(i) == 0
+        param.norm_param = [1, a2(i)];
+    else
+        param.norm_param = [0, a2(i)];
+    end
     [e,param] = motionPopV1MT(param,stim); % remember 'e' (population activity) will be a matrix of n_complex_cell X n_orient X n_vel X n_stim_parameters (in this case the length of diff_c)
     th = 2e-2;    
     sze_e = size(e);

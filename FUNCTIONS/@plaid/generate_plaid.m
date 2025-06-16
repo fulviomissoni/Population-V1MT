@@ -1,20 +1,20 @@
-function II = generate_plaid(pld,varargin)
-    if ~size(varargin,1)
-        disp = 0;
-    else
-        if numel(varargin)>1
-            if isempty(varargin{1})
-                disp=0;
-            else
-                disp = varargin{1};
-            end
-        end
-    end
-
+function II = generate_plaid(pld)
+    % if ~size(varargin,1)
+    %     disp = 0;
+    % else
+    %     if numel(varargin)>1
+    %         if isempty(varargin{1})
+    %             disp=0;
+    %         else
+    %             disp = varargin{1};
+    %         end
+    %     end
+    % end
+    
     for j=1:size(pld.vgrat,1)
         II = simulate(pld);
     %         set(gcf,'Name','test','pos',[1 620 200 200])
-        if disp
+        if pld.disp
             figure
             set(gcf,'color','k')
             set(gca,'vis','off')
