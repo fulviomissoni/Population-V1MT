@@ -5,13 +5,14 @@ function p = plaid(arg)
 
 % [p.C1,p.R1,p.C1S]=grating_geometry(grat.theta(1));
 % [p.C2,p.R2,p.C2S]=grating_geometry(grat.theta(2));
+
 if ~(length(arg.k)==2)
     error('Spatial frequency must be defined for both gratings!!')
 end
-if ~(length(arg.vgrat)==2)
+if ~(size(arg.vgrat,2)==2)
     error('Velocity must be defined for both gratings!!')
 end
-if ~(length(arg.theta_g)==2)
+if ~(size(arg.theta_g,2)==2)
     error('Velocity must be defined for both gratings!!')
 end
 p.apert_rad = arg.apert_rad;
@@ -23,7 +24,6 @@ p.vgrat = arg.vgrat;
 p.theta_g = arg.theta_g;
 p.alpha = arg.alpha;
 p.c = arg.contrast;
-p.pl_type = arg.pl_type;
 p.mode = arg.mode;
 p.k_gauss = arg.k_gauss;
 % from structure to class...

@@ -105,11 +105,12 @@ totsim = cell(3,numel(num_or_pool));
 for i=1:numel(num_or_pool)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
-    stim = initPlaidStimulus(truetheta,[vgrat(:,1), vgrat(:,2)],vplaid,diff_c(:));
+
+    stim = initPlaidStimulus(truetheta,[vgrat(:,1), vgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0);
     stim.type = "plaid";
     stim.mode = 1; %implementation mode (see GeneratePlaid)
-    stim.disp = 0;
-    stim.k_gauss = 0;
+    % stim.disp = 0;
+    % stim.k_gauss = 0;
 
     %SIMULATION 
     param.num_or_ch_pooled = num_or_pool(i);
