@@ -51,8 +51,8 @@ switch type
         end
     case 'RDS_moving'         
         for num_stim = 1:length(stim.truetheta)
-                vx = stim.vgrat(num_stim,1).*cos(stim.truetheta(num_stim));
-                vy = stim.vgrat(num_stim,2).*sin(stim.truetheta(num_stim));
+                vx = stim(num_stim).vgrat(1).*cos(stim.truetheta(num_stim));
+                vy = stim(num_stim).vgrat(2).*sin(stim.truetheta(num_stim));
                 % scale_ind = 4; %do not remember what scale means, it should be related to different scales of the image from same size to bigger ones
                 scale_ind = 1;
                 II{num_stim} = movingRDS_MS(samples,samples,dur,scale_ind,vx, vy);
@@ -66,43 +66,44 @@ switch type
         end
 
     case 'plaid_noise'
-        if ~isfield(stim,'pl_type')
-            pl_type = 1;
-        else 
-            pl_type = stim.pl_type;
-        end
+        % if ~isfield(stim,'pl_type')
+        %     pl_type = 1;
+        % else 
+        %     pl_type = stim.pl_type;
+        % end
         
-        for num_stim = 1:length(stim.truetheta)
-            %plaid object
-            arg.dur = dur;                              %aperture size      [pixs]
-            arg.apert_rad = ceil(samples/2)+2;          %aperture size      [pixs]
-            arg.truetheta = stim.truetheta(num_stim);    %true orientation   [rad]
-            arg.vpld = stim.vel_stim(num_stim);          %velocity amplitude [pixs/frame]
-            arg.k = [k0,k0];                            %spatial freq       [cycle/pix]
-            arg.vgrat = stim.vgrat(num_stim,:);          %gratings vel       [pixs/frame]
-            arg.theta_g = stim.theta_g(num_stim,:);      %gratings orient    [rad]
-            arg.alpha = 0.5;                            %alpha channel for transparency
-            arg.contrast = stim.contrast_g(num_stim,:);  %Contrast of two gratings
-            arg.mode = stim.mode;                       %stimulus implementation algorithm
-            arg.pl_type = pl_type;                      %plaid type
-            arg.k_gauss = stim.k_gauss;                      %with k you can determine the size of the filter that will blur the image
-                                                        %size = 1 / (k_gauss * k0)
+        for num_stim = 1:length(stim)
+            % %plaid object
+            % arg.dur = dur;                              %aperture size      [pixs]
+            % arg.apert_rad = ceil(samples/2)+2;          %aperture size      [pixs]
+            % arg.truetheta = stim.truetheta(num_stim);    %true orientation   [rad]
+            % arg.vpld = stim.vel_stim(num_stim);          %velocity amplitude [pixs/frame]
+            % arg.k = [k0,k0];                            %spatial freq       [cycle/pix]
+            % arg.vgrat = stim.vgrat(num_stim,:);          %gratings vel       [pixs/frame]
+            % arg.theta_g = stim.theta_g(num_stim,:);      %gratings orient    [rad]
+            % arg.alpha = 0.5;                            %alpha channel for transparency
+            % arg.contrast = stim.contrast_g(num_stim,:);  %Contrast of two gratings
+            % arg.mode = stim.mode;                       %stimulus implementation algorithm
+            % arg.pl_type = pl_type;                      %plaid type
+            % arg.k_gauss = stim.k_gauss;                      %with k you can determine the size of the filter that will blur the image
+            %                                             %size = 1 / (k_gauss * k0)
+
             %define plaid object
-            II_plaid{num_stim} = plaid(arg);
+            II_plaid{num_stim} = plaid(stim(num_stim));
             %generate plaid stimulus
             I_plaid{num_stim} = generate_plaid(II_plaid{num_stim});
 
             %RDS_moving
             % scale_ind = 4; %do not remember what scale means, it should be related to different scales of the image from same size to bigger ones
             scale_ind = 1;
-            vx_grat1 = stim.vgrat(num_stim,1).*cos(stim.theta_g(num_stim,1));
-            vy_grat1 = stim.vgrat(num_stim,2).*sin(stim.theta_g(num_stim,1));
+            vx_grat1 = stim(num_stim).vgrat(1).*cos(stim(num_stim).theta_g(1));
+            vy_grat1 = stim(num_stim).vgrat(2).*sin(stim(num_stim).theta_g(1));
             I_RDS_grat1{num_stim} = movingRDS_MS(size(I_plaid{num_stim},1),size(I_plaid{num_stim},2), ...
-                size(I_plaid{num_stim},3),scale_ind,vx_grat1, vy_grat1).*stim.sigma_noise;
-            vx_grat2 = stim.vgrat(num_stim,1).*cos(stim.theta_g(num_stim,2));
-            vy_grat2 = stim.vgrat(num_stim,2).*sin(stim.theta_g(num_stim,2));
+                size(I_plaid{num_stim},3),scale_ind,vx_grat1, vy_grat1).*stim(num_stim).sigma_noise;
+            vx_grat2 = stim(num_stim).vgrat(1).*cos(stim(num_stim).theta_g(2));
+            vy_grat2 = stim(num_stim).vgrat(2).*sin(stim(num_stim).theta_g(2));
             I_RDS_grat2{num_stim} = movingRDS_MS(size(I_plaid{num_stim},1),size(I_plaid{num_stim},2), ...
-                size(I_plaid{num_stim},3),scale_ind,vx_grat2, vy_grat2).*stim.sigma_noise;
+                size(I_plaid{num_stim},3),scale_ind,vx_grat2, vy_grat2).*stim(num_stim).sigma_noise;
             % II{num_stim} = II{num_stim}(60:end-60,60:end-60,:);
             II{num_stim} = I_plaid{num_stim} + I_RDS_grat1{num_stim} + I_RDS_grat2{num_stim};
             

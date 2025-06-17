@@ -7,17 +7,24 @@ addParameter(p, 'disp', 0, @(x) isscalar(x) && (x == 0 || x == 1));
 % Add the 'type' parameter with a default value of 'plaid'
 addParameter(p, 'type', "plaid", @(x) ischar(x) || isstring(x));
 
+% Add the 'alpha' parameter with a default value of '0.5'
+addParameter(p, 'alpha', 0.5, @(x) isscalar(x));
+
+% Add the 'sigma_noise' parameter with a default value of '0'
+addParameter(p, 'sigma_noise', 0, @(x) isscalar(x));
+
 % Parse the input arguments
 parse(p, varargin{:});
 
 % Retrieve the results
 disp = p.Results.disp;
 type = p.Results.type;
+alpha = p.Results.alpha;
+sigma_noise = p.Results.sigma_noise;
 
-
-if isempty(varargin)
-    alpha = 0.5;       %alpha channel for transparency
-end
+% if isempty(varargin)
+%     alpha = 0.5;       %alpha channel for transparency
+% end
 
 if size(contr,2)<2
     c = 1/4+[-contr/4,contr/4];
@@ -56,7 +63,8 @@ for i = 1:num_stim
     stim(i).truetheta = truetheta(i); % true orientation
     stim(i).theta_g = theta; % true orientation
     % stim(i).vpld = vpld(i); % single numeric value for vpld
-    stim(i).theta_g = stim(i).truetheta + [y(i) y2(i)];
+    % stim(i).theta_g = stim(i).truetheta + [y(i) y2(i)];
+    stim(i).theta_g = [y(i) y2(i)];
     stim(i).contrast = [c1(i), c2(i)];
     stim(i).vel_stim = vel_stim(i);
     stim(i).vpld = stim(i).vel_stim; %useless????
@@ -79,4 +87,5 @@ for i = 1:num_stim
     stim(i).apert_rad = ceil(samples/2) + 2;
     stim(i).k_gauss = k_gauss; % single numeric value for k_gauss
     stim(i).alpha = alpha;
+    stim(i).sigma_noise = sigma_noise;
 end
