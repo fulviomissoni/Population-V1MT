@@ -10,26 +10,33 @@ else
     ry = 0;
     start = 1;
 end
-[theta,rho] = cart2pol(rx,ry);
-m=max(rho(:));
-rho = rho/(2*m);
-m(isnan(rho)) = 1;
-rho(isnan(rho)) = 0;
+
+
+% [theta,rho] = cart2pol(rx,ry);
+% m=max(rho(:));
+m = 1;
+% rho = rho/(2*m);
+% m(isnan(rho)) = 1;
+% rho(isnan(rho)) = 0;
+w = .5/size(rx,2);
+h = .5/size(rx,1);
 
 for j=1:size(rx,2)
     for i = 1:size(rx,1)
-       w = .5/size(rx,2);
-       h = .5/size(rx,1);
+       % w = .5/size(rx,2);
+       % h = .5/size(rx,1);
         
-       posx = (1-w)*rho(i,j)*cos(theta(i,j))+0.5 - w/2;
-       posy = (1-h)*rho(i,j)*sin(theta(i,j))+0.5 - h/2;
+       % posx = (1-w)*rho(i,j)*cos(theta(i,j))+0.5 - w/2;
+       % posy = (1-h)*rho(i,j)*sin(theta(i,j))+0.5 - h/2;
+       posx = j/(size(rx,2));
+       posy = i/(2*size(rx,1));
         
         %         axes('Position',[0.075+rem((i-1),8)*0.23/2 0.1+floor((i-1)/8)*0.45/2 0.2/2 0.35/2]);
         %         axes('Position',[0.075+0.5*(j-1)*0.9/9 0.1+(i-1)*0.9/8 0.9/9-0.01 0.9/8-0.01]);
-        axes('Position',[posx posy w h]);
+        axes('Units','normalized','Position',[posx posy w h]);
         
         
-        [my_rho,my_theta] = surfPolar(response(:,:,i,j),0,90,0,s/(2*m));
+        [my_rho,my_theta] = surfPolar(response(:,:,i,j),270,-90,0,s/(2*m));
         colormap(jet(256))
         %hold on maximal value
         hold on
@@ -71,3 +78,6 @@ for j=1:size(rx,2)
         end
     end
 end
+
+% colorbar
+axis equal

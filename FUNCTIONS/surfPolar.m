@@ -15,9 +15,11 @@ end
 % [rho theta]=meshgrid(linspace(-1,1,size(I,2)),linspace(0,pi,size(I,1)+1));
 [rho, theta]=meshgrid(disp,linspace(0,pi,size(I,1)+1));
 
-X=rho.*cos(theta); Y=rho.*sin(theta);
+X = rho.*cos(theta); Y=rho.*sin(theta);
 % [Xout, Yout]=meshgrid(linspace(min(disp),max(disp),101));
-[Xout, Yout]=meshgrid(linspace(min(disp),max(disp),41),linspace(min(disp),max(disp),21));
+[Xout, Yout] = meshgrid( ...
+    linspace(min(disp),max(disp),41), ...
+    linspace(min(disp),max(disp),21));
 
 % [thetaout rhoout] = cart2pol(Xout,Yout);
 thetaout = atan(Yout./Xout);
@@ -26,14 +28,14 @@ thetaout(isnan(thetaout)) = 0;
 rhoout = Xout.*cos(thetaout) + Yout.*sin(thetaout);
 Iout = interp2(rho,theta,[I; fliplr(I(1,:))],rhoout,thetaout);
 % y = linspace(min(disp),max(disp),101);
-y = linspace(min(disp),max(disp),41);
-
-% x = linspace(min(disp),max(disp),101);
-x = linspace(min(disp),max(disp),11);
-
-% imagesc(y,x,Iout)
-[x,y] = meshgrid(x,y);
-g =surf(Xout,Yout,Iout);
+% y = linspace(min(disp),max(disp),41);
+% 
+% % x = linspace(min(disp),max(disp),101);
+% x = linspace(min(disp),max(disp),11);
+% 
+% % imagesc(y,x,Iout)
+% [x,y] = meshgrid(x,y);
+g = surf(Xout,Yout,Iout);
 set(g,'FaceColor','interp','EdgeColor','none')
 % set(g,'FaceColor',[1,1,1])
 axis off

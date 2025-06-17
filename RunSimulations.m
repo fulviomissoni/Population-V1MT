@@ -130,7 +130,7 @@ for i=1:numel(num_or_pool)
     theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
     [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
     
-    mypath = 'SIMULATIONS\PlaidAnalysis\';
+    mypath = 'SIMULATIONS\PlaidAnalysis\NoNoise\';
     namesimtmp = [mypath,'tmpSimulationTot_NormEffect_',num2str(i),'_',str];
     save(namesimtmp,'e','stim','param')
     totsim{1,i} = e;
@@ -141,7 +141,7 @@ for i=1:numel(num_or_pool)
 end
 param.norm_param = [alpha1, alpha2];
 param.num_or_ch_pooled = num_or_ch_pooled;
-mypath = 'SIMULATIONS\PlaidAnalysis\';
+mypath = 'SIMULATIONS\PlaidAnalysis\NoNoise\';
 namesim = [mypath,'SimulationTot_NormEffect',str];
 
 save(namesim,'totsim')
@@ -183,7 +183,7 @@ for i=1:numel(num_or_pool)
     stim = initPlaidStimulus(truetheta,[vgrat(:,1), vgrat(:,2)], ...
         vplaid,diff_c(:),k0,filter_sample,0 ...
         ,'type',"plaid_noise", ...
-        'sigma_noise',1);
+        'sigma_noise',.5);
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
     % stim.disp = 0;
@@ -201,7 +201,7 @@ for i=1:numel(num_or_pool)
     theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
     [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
     
-    mypath = 'SIMULATIONS\PlaidAnalysis\withNoise\';
+    mypath = 'SIMULATIONS\PlaidAnalysis\Noise\';
     namesimtmp = [mypath,'tmpSimulationTot_Noise_NormEffect_',num2str(i),'_',str];
     save(namesimtmp,'e','stim','param')
     totsim{1,i} = e;
@@ -212,10 +212,11 @@ for i=1:numel(num_or_pool)
 end
 param.norm_param = [alpha1, alpha2];
 param.num_or_ch_pooled = num_or_ch_pooled;
-mypath = 'SIMULATIONS\PlaidAnalysis\withNoise\';
+mypath = 'SIMULATIONS\PlaidAnalysis\Noise\';
 namesim = [mypath,'SimulationTot_Noise_NormEffect',str];
 
 save(namesim,'totsim')
+
 
 %% POP RESPONSE TO MOVING RDS
 % This is related to the same of step of before (having a broader frequency
