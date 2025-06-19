@@ -12,39 +12,39 @@ else
 end
 
 
-% [theta,rho] = cart2pol(rx,ry);
-% m=max(rho(:));
+[theta,rho] = cart2pol(rx,ry);
+m=max(rho(:));
 m = 1;
-% rho = rho/(2*m);
-% m(isnan(rho)) = 1;
-% rho(isnan(rho)) = 0;
-w = .5/size(rx,2);
-h = .5/size(rx,1);
+rho = rho/(2*m);
+m(isnan(rho)) = 1;
+rho(isnan(rho)) = 0;
+% w = .5/size(rx,2);
+% h = .5/size(rx,1);
 
 for j=1:size(rx,2)
     for i = 1:size(rx,1)
-       % w = .5/size(rx,2);
-       % h = .5/size(rx,1);
+       w = .5/size(rx,2);
+       h = .5/size(rx,1);
         
-       % posx = (1-w)*rho(i,j)*cos(theta(i,j))+0.5 - w/2;
-       % posy = (1-h)*rho(i,j)*sin(theta(i,j))+0.5 - h/2;
-       posx = j/(size(rx,2));
-       posy = i/(2*size(rx,1));
+       posx = (1-w)*rho(i,j)*cos(theta(i,j))+0.5 - w/2;
+       posy = (1-h)*rho(i,j)*sin(theta(i,j))+0.5 - h/2;
+       % posx = j/(size(rx,2));
+       % posy = i/(2*size(rx,1));
         
         %         axes('Position',[0.075+rem((i-1),8)*0.23/2 0.1+floor((i-1)/8)*0.45/2 0.2/2 0.35/2]);
         %         axes('Position',[0.075+0.5*(j-1)*0.9/9 0.1+(i-1)*0.9/8 0.9/9-0.01 0.9/8-0.01]);
         axes('Units','normalized','Position',[posx posy w h]);
         
         
-        [my_rho,my_theta] = surfPolar(response(:,:,i,j),270,-90,0,s/(2*m));
+        [my_rho,my_theta] = surfPolar(response(:,:,i,j),360,-90,0,s/(2*m));
         colormap(jet(256))
         %hold on maximal value
         hold on
-%         [Xout, Yout] = meshgrid(x);
-%         % [thetaout rhoout] = cart2pol(Xout,Yout);
-%         thetaout = atan(Yout./Xout);
-%         [m,indx] = max(Iout);
-%         [m,indy] = max(m);
+        % [Xout, Yout] = meshgrid(x);
+        % [thetaout rhoout] = cart2pol(Xout,Yout);
+        % thetaout = atan(Yout./Xout);
+        % [m,indx] = max(Iout);
+        % [m,indy] = max(m);
         %MAX VALUE
         [m,indOr] = max(response(:,:,i,j));
         [m,indV] = max(m);
@@ -59,15 +59,15 @@ for j=1:size(rx,2)
 %         hold on, plot(vx_CM/2,vy_CM/2,'m*')
         set(gca,'Color','none')   
         grid off
-%         xlim([-3 3]);
-%         ylim([-3 3]);
-%         if i~=2||j~=1
-%             set(gca,'xtick',[],'ytick',[]);
+        xlim([-3 3]);
+        ylim([-3 3]);
+        if i~=2||j~=1
+            set(gca,'xtick',[],'ytick',[]);
             axis off
-%         else
-%             xlabel('dx')
-%             ylabel('dy')
-%         end
+        else
+            xlabel('dx')
+            ylabel('dy')
+        end
         for k=start:numel(varargin)
             if strcmp(varargin{k},'WTA')
                 varargout{k} = vx_WTA; varargout{k+1} = vy_WTA;

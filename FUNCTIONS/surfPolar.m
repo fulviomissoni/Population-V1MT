@@ -1,14 +1,19 @@
 function varargout = surfPolar(I,az,el,normal,disp)
+% I:        surface to plot
+% (az,el):  view of the surface
+% normal:   normalise I rows by the the midpoint of each row
+% disp:     radial distance for the polar plot, for controlling the extent
+%           of the surface plot in the radial direction
 
 if nargin<2
     az=30;
     el=30;
-    normal=1;
+    normal = true;
 end
 
 % I = matrix containig the value of each point in polar coordinates: row =
 % orientations, cols = modulus
-if normal==1
+if normal == true
     I=I./abs(repmat(I(:,floor(size(I,2)/2)+1),[1 size(I,2)]));
 end
 
@@ -58,4 +63,6 @@ view(az,el);
 
 flag=0;
 varargout{1} = rho; varargout{2} = theta;
+xlim([min(X,[],"all") max(X,[],"all")]);
+ylim([min(X,[],"all") max(X,[],"all")]);
 end
