@@ -1,5 +1,5 @@
 clear variables
-close all
+% close all
 
 addpath FUNCTIONS\
 load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250617_160441.mat")
@@ -67,19 +67,21 @@ plotTestedVelocitiesDirection
 
 % for ii = 1:numel(num_or_ch_pooledTot)
 %     for jj = 1:numel(num_norm)
-        
+
+for ii = 1:11
 theta_cell_OUT = 0:pi/param_reshaped(1,1).n_orient:pi-pi/param_reshaped(1,1).n_orient;    
 [xx,tt] = meshgrid(param_reshaped(1,1).pref_vel,theta_cell_OUT);
 sigma = 0.25;
 
 W = permute(repmat(weightingfunctions(xx,tt),1,1,1,3),[1,2,4,3]);       %Get the weights (for different approach) and repeat for each tested velocity
-e = repmat(squeeze(data_reshaped(2,:,:,1:3,1,1)),1,1,1,size(W,4));
+e = repmat(squeeze(data_reshaped(1,:,:,1:3,ii,1)),1,1,1,size(W,4));
 
 pop_resp = getpopresponse(W,e); % Apply weighting to the response data
 % pop_resp = squeeze(W .* e); 
 
 
 figure, popresponse_tiled(cat(4,e(:,:,:,1),pop_resp))
+end
 
 
 %     end
