@@ -46,7 +46,14 @@ v  = linspace(-1,1,11)*2;
 % alpha = [1,0.2];
 
 sigma_pool = 3;
-num_or_ch_pooled = [8,1];
+alpha_pool_orient = 1:-.1:0; %orientation pooling in normalisation stage is managed with a function that varies from
+                    %a rectangular bandwidth (all orientation pool used to
+                    %only one) in the middle weighting function is
+                    %modulated as a cosine ramp. this parameter moving from 0 to 1 manages the
+                    %normalisation pool
+%orientation weighting: w = (1 - alpha) * tuk + (1:n_orient ==
+%ceil(n_orient/2), where tuk = tukeywin(n_orient,r), where r = alpha =
+%1:-1:0;
 
 %Organize the input parameters for the functions
 param.spat_freq     = k0;               
@@ -91,8 +98,8 @@ str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
 %normalisation parameters
 %Note: I don't work on alpha1 in the normalisation stage (C1/(a1 + a2*pool))
 
-alpha2 = linspace(0,1,11);
-alpha1 = [1,zeros(1,10)];
+alpha2 = 1;
+alpha1 = 1e-17;
 % alpha2 = 1;
 % alpha1 = 0;
  
