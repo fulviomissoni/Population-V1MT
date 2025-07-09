@@ -2,8 +2,8 @@ clear variables
 % close all
 
 addpath FUNCTIONS\
-load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250617_160441.mat")
-% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250617_160441.mat")
+% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250709_122400.mat")
+load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250709_131256.mat")
 
 % M = 3e5; %compute from population response to plaid
 % M = max(data,[],"all");
@@ -23,11 +23,9 @@ numVel = sze(3);
 numTestedStim = sze(4);       %stim parameters tested
 numTestedParameters = sze(5); %population parameters
 
-
-
-data_reshaped = reshape(data,[sze(1:end-1), ...
+data_reshaped = reshape(data,[sze(1:end-2), ...
     numel(num_diff_c), ...
-    numel(num_or_ch_pooledTot)]);
+    sze(end)]);
 param_reshaped = reshape(param, ...
     [numel(num_diff_c), ...
     numel(num_or_ch_pooledTot)]);
