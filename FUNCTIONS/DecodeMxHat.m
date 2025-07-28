@@ -1,6 +1,6 @@
 function [pop_resp_V1MT, vx, vy] = DecodeMxHat(pop_resp,param,sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre)
 %
-%Decoding activity of pop_resp_BioGautama with centre of mass of activity
+%Decoding activity of pop_resp with centre of mass of activity
 %Before, activity is processed iteratively with mexican hat (defined by
 %sigma_r,sigma_t,K parameters) in max_iteration iteration numbers
 %each iteration the activity is thresholded with logistic function defined
