@@ -46,7 +46,14 @@ v  = linspace(-1,1,11)*2;
 % alpha = [1,0.2];
 
 sigma_pool = 3;
-num_or_ch_pooled = [8,1];
+% alpha_pool_orient = 1:-.1:0; %orientation pooling in normalisation stage is managed with a function that varies from
+%                     %a rectangular bandwidth (all orientation pool used to
+%                     %only one) in the middle weighting function is
+%                     %modulated as a cosine ramp. this parameter moving from 0 to 1 manages the
+%                     %normalisation pool
+%orientation weighting: w = (1 - alpha) * tuk + (1:n_orient ==
+%ceil(n_orient/2), where tuk = tukeywin(n_orient,r), where r = alpha =
+%1:-1:0;
 
 %Organize the input parameters for the functions
 param.spat_freq     = k0;               
@@ -57,18 +64,18 @@ param.spatial_filt  = filter_file;
 param.samples       = samples;        
 param.filter_sample = filter_sample;
 % param.norm_param    = alpha;  
-param.sigma_pool    = sigma_pool;
+% param.sigma_pool    = sigma_pool;
 % param.num_or_ch_pooled = num_or_ch_pooled;
 
 param.diff_c = linspace(0,1,11);
 diff_c = param.diff_c;
 vplaid = 1.8;
-truetheta = pi/6 + pi/2;
-theta_grat1 = truetheta + pi/4;
-theta_grat2 = truetheta + deg2rad(linspace(-45,75,3));
+truetheta = deg2rad(30);
+theta_grat1 = truetheta + deg2rad(45);
+theta_grat2 = truetheta + deg2rad(linspace(-45,120,6));
 
-[vgrat(:,:,1), vgrat(:,:,2)] = meshgrid(theta_grat1,theta_grat2);
-vgrat = reshape(vgrat,[],2);
+[vgrat(:,1), vgrat(:,2)] = meshgrid(theta_grat1,theta_grat2);
+% vgrat = reshape(vgrat,[],2);
 
 
 dt = datetime('now');
@@ -91,24 +98,39 @@ str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
 %normalisation parameters
 %Note: I don't work on alpha1 in the normalisation stage (C1/(a1 + a2*pool))
 
-alpha2 = linspace(0,1,11);
-alpha1 = [1,zeros(1,10)];
+alpha2 = 1;
+alpha1 = 1e-17;
+param.norm_param = [alpha1, alpha2];
+%orientation pooling is managed by an exponential rule
+x = linspace(1,n_orient,100);
+sigma_orient = .5:1.5:15;
+x_8 = round(linspace(1,100,n_orient));
+% for ii = 1:numel(sigma_orient)
+%     % figure,
+%     w_o(ii,:,:) = exp(-(x(x_8)-(1:n_orient)').^2./(2.*sigma_orient(ii).^2));
+%     % plot(squeeze(y(ii,:,:))), ylim([0,1])
+% end
+% y_max = y./max(y,[],2);
+% figure, plot(x,y_max); 
+% w_orient = y_max(x_8);
+% hold on, scatter(x(x_8),y_max(:,x_8),'filled')
 % alpha2 = 1;
 % alpha1 = 0;
  
-[num_or_pool,a2] = meshgrid(num_or_ch_pooled,alpha2);
+% [num_or_pool,sigma_o] = meshgrid(num_or_ch_pooled,sigma_orient);
 % contr = contr(:);
-num_or_pool = num_or_pool(:);
-a2 = a2(:);
-a1 = zeros(length(a2),1);
-a1(a2 == 0) = 1;
+% num_or_pool = num_or_pool(:);
+% sigma_o = sigma_o(:);
+% a1 = zeros(length(a2),1);
+% a1(a2 == 0) = 1;
 % num_or_ch_pooled = param.num_or_ch_pooled;
 % num_or_pool = num_or_ch_pooled;
 
 %initialise the image
-totsim = cell(3,numel(num_or_pool));
+totsim = cell(3,numel(sigma_orient));
+param.num_or_ch_pooled = 8;
 
-for i=1:numel(num_or_pool)
+for i = 1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
 
@@ -119,9 +141,11 @@ for i=1:numel(num_or_pool)
     % stim.k_gauss = 0;
 
     %SIMULATION 
-    param.num_or_ch_pooled = num_or_pool(i);
+    % param.num_or_ch_pooled = num_or_pool(i);
+    w_o = exp(-(x(x_8)-(1:n_orient)').^2./(2.*sigma_orient(i).^2));
 
-    param.norm_param = [a1(i), a2(i)];
+    param.orient_weighting = w_o;
+    param.sigma_orient = sigma_orient(i);
     [e,param] = motionPopV1MT(param,stim); % remember 'e' (population activity) will be a matrix of n_complex_cell X n_orient X n_vel X n_stim_parameters (in this case the length of diff_c)
     th = 2e-2;    
     sze_e = size(e);
@@ -139,8 +163,8 @@ for i=1:numel(num_or_pool)
     toc
     disp(['Simulation ',num2str(i), ' finished'])
 end
-param.norm_param = [alpha1, alpha2];
-param.num_or_ch_pooled = num_or_ch_pooled;
+% param.norm_param = [alpha1, alpha2];
+% param.num_or_ch_pooled = num_or_ch_pooled;
 mypath = 'SIMULATIONS\PlaidAnalysis\NoNoise\';
 namesim = [mypath,'SimulationTot_NormEffect',str];
 
@@ -158,25 +182,32 @@ save(namesim,'totsim')
 
 %normalisation parameters
 %Note: I don't work on alpha1 in the normalisation stage (C1/(a1 + a2*pool))
-
-alpha2 = linspace(0,1,11);
-alpha1 = [1,zeros(1,10)];
+alpha2 = 1;
+alpha1 = 1e-17;
+param.norm_param = [alpha1, alpha2];
+x = linspace(1,n_orient,100);
+sigma_orient = .5:1.5:15;
+x_8 = round(linspace(1,100,n_orient));
+% alpha2 = linspace(0,1,11);
+% alpha1 = [1,zeros(1,10)];
 % alpha2 = 1;
 % alpha1 = 0;
  
-[num_or_pool,a2] = meshgrid(num_or_ch_pooled,alpha2);
+% [num_or_pool,a2] = meshgrid(num_or_ch_pooled,alpha2);
 % contr = contr(:);
-num_or_pool = num_or_pool(:);
-a2 = a2(:);
-a1 = zeros(length(a2),1);
-a1(a2 == 0) = 1;
+% num_or_pool = num_or_pool(:);
+% a2 = a2(:);
+% a1 = zeros(length(a2),1);
+% a1(a2 == 0) = 1;
 % num_or_ch_pooled = param.num_or_ch_pooled;
 % num_or_pool = num_or_ch_pooled;
+param.norm_param = [alpha1, alpha2];
 
 %initialise the image
-totsim = cell(3,numel(num_or_pool));
+param.num_or_ch_pooled = 8;
+totsim = cell(3,numel(sigma_orient));
 
-for i=1:numel(num_or_pool)
+for i=1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
 
@@ -190,9 +221,13 @@ for i=1:numel(num_or_pool)
     % stim.k_gauss = 0;
 
     %SIMULATION 
-    param.num_or_ch_pooled = num_or_pool(i);
+    % param.num_or_ch_pooled = num_or_pool(i);
+    w_o = exp(-(x(x_8)-(1:n_orient)').^2./(2.*sigma_orient(i).^2));
 
-    param.norm_param = [a1(i), a2(i)];
+    param.orient_weighting = w_o;
+    param.sigma_orient = sigma_orient(i);
+
+    % param.norm_param = [a1(i), a2(i)];
     [e,param] = motionPopV1MT(param,stim); % remember 'e' (population activity) will be a matrix of n_complex_cell X n_orient X n_vel X n_stim_parameters (in this case the length of diff_c)
     th = 2e-2;    
     sze_e = size(e);
@@ -210,8 +245,8 @@ for i=1:numel(num_or_pool)
     toc
     disp(['Simulation ',num2str(i), ' finished'])
 end
-param.norm_param = [alpha1, alpha2];
-param.num_or_ch_pooled = num_or_ch_pooled;
+% param.norm_param = [alpha1, alpha2];
+% param.num_or_ch_pooled = num_or_ch_pooled;
 mypath = 'SIMULATIONS\PlaidAnalysis\Noise\';
 namesim = [mypath,'SimulationTot_Noise_NormEffect',str];
 

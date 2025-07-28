@@ -58,6 +58,7 @@ function [C1] = populationV1MT(G,param)
 alpha = param.norm_param;
 sigma_pool = param.sigma_pool;
 num_or_ch_pooled = param.num_or_ch_pooled;
+w_o = param.orient_weighting;
 
 [sy, sx, n_frames, n_orient, v] = size(G{1});
 sze = size(G{1});
@@ -68,7 +69,7 @@ Ct = G{3}(:);   % REAL LEFT - Temporal Derivative
 St = G{4}(:);   % IMAG LEFT - Temporal Derivative
 
 clear G;
-
+w_orient = permute(repmat(w_o,sy*sx*n_frames,1,v),[2,3,1]);
 %% ENERGY MODEL
 
 % ALLOCATE MEMORY
@@ -106,42 +107,42 @@ for i = 1:2
         S(:,:,p) = tmp2;
         C1_pooled{i}(:,:,p) = tmp2;
     end
+    % C1_pooled{i} = reshape(C1_pooled{i},sy*sx*n_frames,n_orient,v);
     C1_pooled{i} = reshape(C1_pooled{i},1,[]);
-    % C1{i} = reshape(C1{i},1,[]);
 
     S = reshape(S,sy*sx*n_frames,n_orient,v);
     S = permute(S,[2 3 1]);
-%     S = reshape(S,n_orient,[]);
-    % index_o = 1:8;
-    % tmp = S;
     m = 1/mean(S,'all');
-
+    %orientation pooling
+    S = repmat(sum(pagemtimes(w_o, S),2),[1 v 1]); %apply orientation weighting
+    
 %     a2 = 1;
 %     a2 = 1/max(max(S));
 
     %orientation pooling
-    if num_or_ch_pooled == 8
-        S = sum(S,[1,2]);
-        S = repmat(S,[n_orient v 1]);
-    end
-    if num_or_ch_pooled == 1
-        S = sum(S,2);
-        S = repmat(S,[1 v 1]);
-    end
-%     if num_or_ch_pooled~=8
-%         index_o = circshift(index_o,floor(num_or_ch_pooled/2));
-%         for o = 1:n_orient  
-%             S(o,:) = sum(tmp(index_o(1:1+num_or_ch_pooled-1),:));
-%             index_o = circshift(index_o,-floor(num_or_ch_pooled/2));
-%         end
-%     end
-%     if num_or_ch_pooled==8
-%         S = repmat(sum(tmp),[n_orient,1]);
-%     end
-%     if num_or_ch_pooled==1
-%         S = tmp;
-%     end
-    S = reshape(S,n_orient,v,sy*sx*n_frames);
+
+%     % if num_or_ch_pooled == 8
+%     %     S = sum(S.*w_orient,[1,2]);
+%     %     S = repmat(S,[n_orient v 1]);
+%     % end
+%     % if num_or_ch_pooled == 1
+%     %     S = sum(S,2);
+%     %     S = repmat(S,[1 v 1]);
+%     % end
+% %     if num_or_ch_pooled~=8
+% %         index_o = circshift(index_o,floor(num_or_ch_pooled/2));
+% %         for o = 1:n_orient  
+% %             S(o,:) = sum(tmp(index_o(1:1+num_or_ch_pooled-1),:));
+% %             index_o = circshift(index_o,-floor(num_or_ch_pooled/2));
+% %         end
+% %     end
+% %     if num_or_ch_pooled==8
+% %         S = repmat(sum(tmp),[n_orient,1]);
+% %     end
+% %     if num_or_ch_pooled==1
+% %         S = tmp;
+% %     end
+    % S = reshape(S,n_orient,v,sy*sx*n_frames);
     S = permute(S,[3 1 2]);
     S = reshape(S,1,[]);
     
