@@ -1,5 +1,5 @@
 clear variables
-% close all
+close all
 
 addpath FUNCTIONS\
 % load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250709_122400.mat")
@@ -99,17 +99,17 @@ W = permute( ...
 %EVEN POPULATION
 for ii = 1:prod(sze_reshaped(4:5))
     
-    e_1 = squeeze(data_reshaped(1,:,:,ii,:,:));
-    e_2 = squeeze(data_reshaped(2,:,:,ii,:,:));
+    e_1(:,:,ii,:,:) = squeeze(data_reshaped(1,:,:,ii,:,:));
+    e_2(:,:,ii,:,:) = squeeze(data_reshaped(2,:,:,ii,:,:));
 
     w = squeeze(W(:,:,ii,:,:,:));
-    pop_resp_odd = getpopresponse(w,e_1); % Apply weighting to the response data
-    pop_resp_even = getpopresponse(w,e_2); % Apply weighting to the response data
+    pop_resp_odd(:,:,ii,:,:,:) = getpopresponse(w,e_1(:,:,ii,:,:)); % Apply weighting to the response data
+    pop_resp_even(:,:,ii,:,:,:) = getpopresponse(w,e_2(:,:,ii,:,:)); % Apply weighting to the response data
     
     % pop_resp = squeeze(W .* e); 
     pop_resp = pop_resp_even - pop_resp_odd;
-    figure, popresponse_tiled(e_2);
-    figure, popresponse_tiled(squeeze(pop_resp_even(:,:,:,:,2)));
+    % figure, popresponse_tiled(e_2(:,:,ii,:,:,:));
+    % figure, popresponse_tiled(squeeze(pop_resp_even(:,:,ii,:,:,2)));
 
     % figure, popresponse_tiled(cat(4,e(:,:,:,1),pop_resp))
 end
@@ -129,23 +129,53 @@ figure, plot(TestedDiff), hold on,plot(norm_param_sigma)
 %Remember that a mexican hat is defined as 
 % MX = 1/(2*pi*sigma_r*sigma_t)*exp(-X/2) - ...
 %    1/(2*pi*K^2*sigma_r*sigma_t)*exp(-X/(2*K^2));
-sigma_r = 0.1;  
-sigma_t = 0.4;  
-K = 1.5; %inihibitory field size factor
+% sigma_r = 0.1;  
+% sigma_t = 0.4;  
+% K = 1.5; %inihibitory field size factor
+% % Thresholding parameter
+% 
+% logistic_slope = 8;
+% logistic_centre = 0.65;
+% max_iteration = 105;
+
+sigma_r = 0.2;  
+sigma_t = 0.3;  
+K = 2; %inihibitory field size factor
 % Thresholding parameter
  
-logistic_slope = 8;
-logistic_centre = 0.65;
-max_iteration = 105;
+logistic_slope = 6;
+logistic_centre = 0.3;
+max_iteration = 12;
 
-%Activity Decoding 
-[PR_decoded] = DecodeMxHat( ...
-    squeeze(MT_norm(:,:,normIdx,stimIdx)), ...  %Activity
-    param, ...                                  %Population Parameters
-    sigma_r, ...                                %
-    sigma_t, ...
-    K, ...
-    max_iteration, ...
-    logistic_slope, ...
-    logistic_centre);
 
+sze_pop = size(pop_resp_even);
+num_cond = prod(sze_pop(3:end));
+%Activity Decoding
+for ii = 1:num_cond
+    [PR_decoded(:,:,:,ii),vx(ii),vy(ii)] = DecodeMxHat( ...
+                                squeeze(pop_resp_even(:,:,ii)), ...  %Activity
+                                param(1), ...                                  %Population Parameters
+                                sigma_r, ...                                %see code
+                                sigma_t, ...
+                                K, ...
+                                max_iteration, ...
+                                logistic_slope, ...
+                                logistic_centre);
+end
+
+PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
+vx = reshape(vx,sze_pop(3:end));
+vy = reshape(vy,sze_pop(3:end));
+
+%% plot
+figure, popresponse_tiled(squeeze(PR_decoded(:,:,1,1,:,1,1)))
+% tiledlayout('flow')
+figure,
+% for ii = 1:6
+% v = squeeze(sqrt(vx(:,:,1,1).^2 + vy(:,:,1,1).^2));
+v = squeeze(sqrt(vx.^2 + vy.^2));
+
+plot(TestedDiff,v), legend(string(rad2deg(theta2)))
+%legend(string(TestedDiff(1))),
+ylim([1,1.8])
+% end
