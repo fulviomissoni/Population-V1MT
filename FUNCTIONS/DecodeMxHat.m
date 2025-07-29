@@ -104,14 +104,14 @@ sze = size(squeeze(pop_resp(:,:)));
         M = max(CT,[],'all');
         CT = M*1./(1+exp(-logistic_slope*(squeeze(CT)-M*logistic_centre)));
         CT = MX*CT;
-        CT = CT./mean(CT,'all');
+        CT = CT./mean(CT,'all','omitnan');
         pop_resp_V1MT(:,:,indResp) = reshape(CT,sze);
         tmp = CT;
     end
 % end
 %Thresholding
 % M = max(squeeze(pop_resp_V1MT(:,:,max_iteration)),[],'all');
-pop_resp_V1MT(:,:,max_iteration) = M*1./(1+exp(-logistic_slope*(squeeze(pop_resp_V1MT(:,:,max_iteration))-M*logistic_centre)));
+% pop_resp_V1MT(:,:,max_iteration) = M*1./(1+exp(-logistic_slope*(squeeze(pop_resp_V1MT(:,:,max_iteration))-M*logistic_centre)));
 pop_resp_V1MT = reshape(pop_resp_V1MT,param.n_orient,numel(param.pref_vel),max_iteration);
 
 % centre of mass

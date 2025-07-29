@@ -2,8 +2,8 @@ clear variables
 % close all
 
 addpath FUNCTIONS\
-% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250709_122400.mat")
-load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250722_122439.mat")
+load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250722_122439.mat")
+% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250722_122439.mat")
 
 % M = 3e5; %compute from population response to plaid
 % M = max(data,[],"all");
@@ -67,7 +67,7 @@ data_reshaped = reshape(data,[sze(1:end-2), ...
 
 
 %population tested parameters
-plotTestedVelocitiesDirection
+% plotTestedVelocitiesDirection
 
 %% Look at the data
 
@@ -99,21 +99,21 @@ W = permute( ...
 %EVEN POPULATION
 for ii = 1:prod(sze_reshaped(4:5))
     
-    e_1 = squeeze(data_reshaped(1,:,:,ii,:,:));
-    e_2 = squeeze(data_reshaped(2,:,:,ii,:,:));
+    e_1(:,:,ii,:,:) = squeeze(data_reshaped(1,:,:,ii,:,:));
+    e_2(:,:,ii,:,:) = squeeze(data_reshaped(2,:,:,ii,:,:));
 
     w = squeeze(W(:,:,ii,:,:,:));
-    pop_resp_odd = getpopresponse(w,e_1); % Apply weighting to the response data
-    pop_resp_even = getpopresponse(w,e_2); % Apply weighting to the response data
+    pop_resp_odd(:,:,ii,:,:,:) = getpopresponse(w,e_1(:,:,ii,:,:)); % Apply weighting to the response data
+    pop_resp_even(:,:,ii,:,:,:) = getpopresponse(w,e_2(:,:,ii,:,:)); % Apply weighting to the response data
     
     % pop_resp = squeeze(W .* e); 
     pop_resp = pop_resp_even - pop_resp_odd;
-    figure, popresponse_tiled(e_2);
-    figure, popresponse_tiled(squeeze(pop_resp_even(:,:,:,:,2)));
+    % figure, popresponse_tiled(e_2);
+    % figure, popresponse_tiled(squeeze(pop_resp_even(:,:,:,:,2)));
 
     % figure, popresponse_tiled(cat(4,e(:,:,:,1),pop_resp))
 end
-figure, plot(TestedDiff), hold on,plot(norm_param_sigma)
+% figure, plot(TestedDiff), hold on,plot(norm_param_sigma)
 
 %% Decode Activity
 %Decoding activity of pop_resp with centre of mass of activity
@@ -129,24 +129,63 @@ figure, plot(TestedDiff), hold on,plot(norm_param_sigma)
 %Remember that a mexican hat is defined as 
 % MX = 1/(2*pi*sigma_r*sigma_t)*exp(-X/2) - ...
 %    1/(2*pi*K^2*sigma_r*sigma_t)*exp(-X/(2*K^2));
+% sigma_r = 0.1;  
+% sigma_t = 0.4;  
+% K = 1.5; %inihibitory field size factor
+% % Thresholding parameter
+% 
+% logistic_slope = 8;
+% logistic_centre = 0.65;
+% max_iteration = 105;
 
+% pop_resp = pop_resp_even;
+% If your data grid is, say, 8x11:
 sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
 sigma_t = pi/8;
 K = 1.8;
-logistic_slope = 3;
+logistic_slope = 2;
 logistic_centre = 0.5;
-max_iteration = 8;
+max_iteration = 4;
 
-%Activity Decoding 
-[PR_decoded] = DecodeMxHat( ...
-    squeeze(pop_resp_even(:,:,normIdx,stimIdx)), ...  %Activity
-    param, ...                                  %Population Parameters
-    sigma_r, ...                                %
-    sigma_t, ...
-    K, ...
-    max_iteration, ...
-    logistic_slope, ...
-    logistic_centre);
+
+sze_pop = size(pop_resp_even);
+num_cond = prod(sze_pop(3:end));
+weight_mode = 1;
+%Activity Decoding
+for ii = 1:num_cond
+    [PR_decoded(:,:,:,ii),vx(ii),vy(ii)] = DecodeMxHat( ...
+                                squeeze(pop_resp_even(:,:,ii)), ...  %Activity
+                                param(1), ...                                  %Population Parameters
+                                sigma_r, ...                                %see code
+                                sigma_t, ...
+                                K, ...
+                                max_iteration, ...
+                                logistic_slope, ...
+                                logistic_centre);
+end
+
+PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
+
+figure, t = popresponse_tiled(squeeze(PR_decoded(:,:,:,3,:,10,weight_mode))); 
+title(t,'Population Activity Decoded (rows are different Iteration, col are contrast)')
+vx = reshape(vx,sze_pop(3:end));
+vy = reshape(vy,sze_pop(3:end));
+
+v = sqrt(vx.^2 + vy.^2);
+ori = atan2(vy,vx);
+% figure, plot(squeeze(v(2,:,:,2)))
+gradientMap = parula(numel(norm_param_sigma));
+for ii = 1:size(ori,1)
+    figure,
+    hold on,
+    estim = squeeze(ori(ii,:,:,weight_mode)); 
+    true = repmat(stim(1,1).truetheta,size(estim,1),size(estim,2));
+    scatter(TestedDiff, abs(rad2deg(angdiff(estim,true))),'filled', ...
+        'MarkerFaceAlpha',0.4,'MarkerEdgeColor','none','Color',gradientMap), %legend(string(rad2deg(TestedGrat_2)))
+    plot(TestedDiff, abs(rad2deg(angdiff(estim,true)))); legend(string(norm_param_sigma))
+    colororder(gradientMap)
+    ylim([0,150])
+end
 %% Debug function
 % How to Choose Parameters Systematically:
 % Step 1: Start with logistic_centre
