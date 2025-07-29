@@ -73,15 +73,13 @@ function [pop_resp_V1MT, vx, vy] = DecodeMxHat(pop_resp,param,sigma_r,sigma_t,K,
 %%
 % Set parameters
 th = 2e-2;
-diff_c = param.diff_c;
-num_or_ch_pooled = param.num_or_ch_pooled;
 
 theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;
 [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
 tt = tt + pi*(xx<0);
 xx = abs(xx);
-dx = xx(:).*cos(tt(:));
-dy = xx(:).*sin(tt(:));
+% dx = xx(:).*cos(tt(:));
+% dy = xx(:).*sin(tt(:));
 X = ((xx(:) - xx(:)').^2) / sigma_r^2 + ((tt(:) - tt(:)').^2) / sigma_t^2;
 %MEXICAN HAT
 MX = 1/(2*pi*sigma_r*sigma_t)*exp(-X/2) - ...
@@ -95,9 +93,9 @@ sze = size(squeeze(pop_resp(:,:)));
 % logistic_centre = M*logistic_centre;
 % for i=1:size(pop_resp,1)
     % tmp = pop_resp_BioGautama;
-    tmp = squeeze(pop_resp(:,:));
+    tmp = pop_resp;
     %organize population responses
-    pop_resp_V1MT(:,:,1) = squeeze(pop_resp(:,:));
+    pop_resp_V1MT(:,:,1) = pop_resp;
     for indResp = 2:max_iteration
         %Apply my Weights
         %iterates mexican hat weigthing function
