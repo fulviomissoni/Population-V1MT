@@ -13,8 +13,6 @@ function [pop_resp_V1MT, vx, vy] = DecodeMxHat(pop_resp,param,sigma_r,sigma_t,K,
 %   param           - Parameter structure with required fields:
 %                     .n_orient: number of orientation channels (integer)
 %                     .pref_vel: preferred velocity values (vector)  
-%                     .diff_c: differential contrast parameter (scalar)
-%                     .num_or_ch_pooled: number of orientation channels pooled (integer)
 %   sigma_r         - Velocity dimension spatial scale (positive scalar, typically 0.1-10)
 %                     Controls extent of center-surround filtering in velocity space
 %   sigma_t         - Orientation dimension spatial scale (positive scalar, typically 0.1-π/2)  

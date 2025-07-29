@@ -129,18 +129,17 @@ figure, plot(TestedDiff), hold on,plot(norm_param_sigma)
 %Remember that a mexican hat is defined as 
 % MX = 1/(2*pi*sigma_r*sigma_t)*exp(-X/2) - ...
 %    1/(2*pi*K^2*sigma_r*sigma_t)*exp(-X/(2*K^2));
-sigma_r = 0.1;  
-sigma_t = 0.4;  
-K = 1.5; %inihibitory field size factor
-% Thresholding parameter
- 
-logistic_slope = 8;
-logistic_centre = 0.65;
-max_iteration = 105;
+
+sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
+sigma_t = pi/8;
+K = 1.8;
+logistic_slope = 3;
+logistic_centre = 0.5;
+max_iteration = 8;
 
 %Activity Decoding 
 [PR_decoded] = DecodeMxHat( ...
-    squeeze(MT_norm(:,:,normIdx,stimIdx)), ...  %Activity
+    squeeze(pop_resp_even(:,:,normIdx,stimIdx)), ...  %Activity
     param, ...                                  %Population Parameters
     sigma_r, ...                                %
     sigma_t, ...
@@ -148,4 +147,39 @@ max_iteration = 105;
     max_iteration, ...
     logistic_slope, ...
     logistic_centre);
+%% Debug function
+% How to Choose Parameters Systematically:
+% Step 1: Start with logistic_centre
+% 
+% Too high (>0.5): Kills most activity → single peak dominance
+% Too low (<0.1): Preserves too much noise
+% Sweet spot: 0.15 - 0.35 depending on your noise level
+% 
+% Step 2: Adjust K for competition strength
+% 
+% K = 1.5: Winner-take-all (only one peak survives)
+% K = 2-3: Moderate competition (2-3 peaks can coexist)
+% K > 3: Gentle competition (multiple peaks preserved)
+% 
+% Step 3: Tune spatial scales
+% 
+% Start with sigma_r and sigma_t roughly equal to your feature spacing
+% If your velocity grid spacing is 2 units, try sigma_r = 0.5 to sigma_r = 2
+% If orientation spacing is π/8, try sigma_t = π/16 to sigma_t = π/4
+% 
+% Step 4: Fine-tune logistic_slope
+% 
+% Low (1-3): Gentle contrast enhancement
+% Medium (4-7): Moderate contrast
+% High (8+): Aggressive thresholding
 
+pop_resp = pop_resp_even;
+% If your data grid is, say, 8x11:
+sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
+sigma_t = pi/8;
+K = 1.8;
+logistic_slope = 3;
+logistic_centre = 0.5;
+max_iteration = 8;
+
+debugDecodeMxHat(pop_resp(:,:,1,1,1),param(1),sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
