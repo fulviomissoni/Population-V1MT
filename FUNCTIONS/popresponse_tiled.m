@@ -23,12 +23,13 @@ for i = 1:sze(3)
 for j = 1:sze(4)
 nexttile,
 surfPolar(squeeze(e(:,:,i,j)),0,90,'false',linspace(-2,2,11));
-colormap(jet(256))
+% colormap(jet(256))
+% axis equal
 
 title(titlestr(i,j))
 end
 end
-cb = colorbar;  cb.Layout.Tile = 'east'; 
+% cb = colorbar;  cb.Layout.Tile = 'east'; 
 
 varargout{1} = t;
 

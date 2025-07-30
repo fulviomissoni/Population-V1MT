@@ -64,17 +64,17 @@ param.spatial_filt  = filter_file;
 param.samples       = samples;        
 param.filter_sample = filter_sample;
 % param.norm_param    = alpha;  
-% param.sigma_pool    = sigma_pool;
+param.sigma_pool    = sigma_pool;
 % param.num_or_ch_pooled = num_or_ch_pooled;
 
 param.diff_c = linspace(0,1,11);
 diff_c = param.diff_c;
 vplaid = 1.8;
 truetheta = deg2rad(30);
-theta_grat1 = truetheta + deg2rad(45);
-theta_grat2 = truetheta + deg2rad(linspace(-45,120,6));
+theta_grat1 = truetheta + deg2rad(30);
+theta_grat2 = truetheta + deg2rad(linspace(-45,90,8));
 
-[vgrat(:,1), vgrat(:,2)] = meshgrid(theta_grat1,theta_grat2);
+[tgrat(:,1), tgrat(:,2)] = meshgrid(theta_grat1,theta_grat2);
 % vgrat = reshape(vgrat,[],2);
 
 
@@ -134,7 +134,7 @@ for i = 1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
 
-    stim = initPlaidStimulus(truetheta,[vgrat(:,1), vgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0);
+    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0,'disp',0);
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
     % stim.disp = 0;
@@ -211,7 +211,7 @@ for i=1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
 
-    stim = initPlaidStimulus(truetheta,[vgrat(:,1), vgrat(:,2)], ...
+    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)], ...
         vplaid,diff_c(:),k0,filter_sample,0 ...
         ,'type',"plaid_noise", ...
         'sigma_noise',.5);

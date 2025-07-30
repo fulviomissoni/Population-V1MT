@@ -1,9 +1,11 @@
 clear variables
-% close all
+close all
 
 addpath FUNCTIONS\
-load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250722_122439.mat")
+% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250722_122439.mat")
+load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250730_183038.mat")
 % load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250722_122439.mat")
+% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250730_175259.mat")
 
 % M = 3e5; %compute from population response to plaid
 % M = max(data,[],"all");
@@ -68,7 +70,7 @@ data_reshaped = reshape(data,[sze(1:end-2), ...
 
 %population tested parameters
 % plotTestedVelocitiesDirection
-
+plotPlaidVectors(testedTrueThetaPlaid,TestedGrat_2) %% TO DO DO DO DO DO DO DO DOD 
 %% Look at the data
 
 % figure,
@@ -142,15 +144,15 @@ end
 % If your data grid is, say, 8x11:
 sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
 sigma_t = pi/8;
-K = 1.8;
-logistic_slope = 2;
+K = 2;
+logistic_slope = 5;
 logistic_centre = 0.5;
-max_iteration = 4;
+max_iteration = 10;
 
 
 sze_pop = size(pop_resp_even);
 num_cond = prod(sze_pop(3:end));
-weight_mode = 1;
+weight_mode = 2;
 %Activity Decoding
 for ii = 1:num_cond
     [PR_decoded(:,:,:,ii),vx(ii),vy(ii)] = DecodeMxHat( ...
@@ -166,7 +168,8 @@ end
 
 PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
 
-figure, t = popresponse_tiled(squeeze(PR_decoded(:,:,:,3,:,10,weight_mode))); 
+figure, t = popresponse_tiled(cat(3,reshape(squeeze(e_2(:,:,3,:,1)),[sze_pop(1:2),1,sze_pop(4)]),...
+                    squeeze(PR_decoded(:,:,:,3,:,1,weight_mode)))); 
 title(t,'Population Activity Decoded (rows are different Iteration, col are contrast)')
 vx = reshape(vx,sze_pop(3:end));
 vy = reshape(vy,sze_pop(3:end));
@@ -216,9 +219,9 @@ pop_resp = pop_resp_even;
 % If your data grid is, say, 8x11:
 sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
 sigma_t = pi/8;
-K = 1.8;
-logistic_slope = 3;
+K = 2;
+logistic_slope = 5;
 logistic_centre = 0.5;
-max_iteration = 8;
+max_iteration = 10;
 
 debugDecodeMxHat(pop_resp(:,:,1,1,1),param(1),sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
