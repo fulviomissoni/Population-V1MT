@@ -103,7 +103,8 @@ for i = 1:2
     %spatial pooling of normalization pool
     for p = 1:n_frames*n_orient*v
         tmp = C1_pooled{i}(:,:,p);
-        tmp2 = imgaussfilt(tmp,sigma_pool);
+        % tmp2 = imgaussfilt(tmp,sigma_pool);
+        tmp2 = tmp;
         S(:,:,p) = tmp2;
         C1_pooled{i}(:,:,p) = tmp2;
     end
@@ -112,7 +113,8 @@ for i = 1:2
 
     S = reshape(S,sy*sx*n_frames,n_orient,v);
     S = permute(S,[2 3 1]);
-    m = 1/mean(S,'all');
+    % m = 1/mean(S,'all');
+    m = 1;
     %orientation pooling
     S = repmat(sum(pagemtimes(w_o, S),2),[1 v 1]); %apply orientation weighting
     

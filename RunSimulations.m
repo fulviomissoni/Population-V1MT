@@ -1,7 +1,7 @@
 %Run simulations 
 
 clear
-close all
+% close all
 clc
 
 addpath FUNCTIONS
@@ -73,7 +73,7 @@ vplaid = 1.8;
 truetheta = deg2rad(30);
 theta_grat1 = truetheta + deg2rad(30);
 theta_grat2 = truetheta + deg2rad(linspace(-45,90,8));
-
+% theta_grat2 = truetheta + deg2rad(70);
 [tgrat(:,1), tgrat(:,2)] = meshgrid(theta_grat1,theta_grat2);
 % vgrat = reshape(vgrat,[],2);
 
@@ -99,11 +99,12 @@ str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
 %Note: I don't work on alpha1 in the normalisation stage (C1/(a1 + a2*pool))
 
 alpha2 = 1;
-alpha1 = 1e-17;
+% alpha1 = 1e-17;
+alpha1 = 1;
 param.norm_param = [alpha1, alpha2];
 %orientation pooling is managed by an exponential rule
 x = linspace(1,n_orient,100);
-sigma_orient = .5:1.5:15;
+sigma_orient = .25:1.5:15;
 x_8 = round(linspace(1,100,n_orient));
 % for ii = 1:numel(sigma_orient)
 %     % figure,
@@ -183,10 +184,11 @@ save(namesim,'totsim')
 %normalisation parameters
 %Note: I don't work on alpha1 in the normalisation stage (C1/(a1 + a2*pool))
 alpha2 = 1;
-alpha1 = 1e-17;
+% alpha1 = 1e-17;
+alpha1 = 1;
 param.norm_param = [alpha1, alpha2];
 x = linspace(1,n_orient,100);
-sigma_orient = .5:1.5:15;
+sigma_orient = .25:1.5:15;
 x_8 = round(linspace(1,100,n_orient));
 % alpha2 = linspace(0,1,11);
 % alpha1 = [1,zeros(1,10)];

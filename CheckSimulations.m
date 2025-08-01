@@ -3,9 +3,16 @@ close all
 
 addpath FUNCTIONS\
 % load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250722_122439.mat")
-load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250730_183038.mat")
+% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250730_183038.mat")
+% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250731_142016.mat")
+% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250731_164043.mat") %TO DELETE
+% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250731_164527.mat")
+load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250801_132719.mat")
+
 % load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250722_122439.mat")
 % load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250730_175259.mat")
+% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250731_142016.mat")
+% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250731_164527.mat") %TO DELETE
 
 % M = 3e5; %compute from population response to plaid
 % M = max(data,[],"all");
@@ -39,6 +46,9 @@ TestedDiff = unique(TotTestedDiff);
 TotTestedGrat = reshape(TotTestedGrat, ...
         [numel(TestedGrat_1),numel(TestedGrat_2) ...
         numel(TestedDiff),numTestedPopParameters,2]);
+TotTestedVGrat = reshape(TotTestedVGrat, ...
+        [numel(TestedVGrat_1),numel(TestedVGrat_2) ...
+        numel(TestedDiff),numTestedPopParameters,2]);
 TotTestedDiff = reshape(TotTestedDiff, ...
         [numel(TestedGrat_1),numel(TestedGrat_2) ...
         numel(TestedDiff),numTestedPopParameters]);
@@ -67,10 +77,14 @@ data_reshaped = reshape(data,[sze(1:end-2), ...
 % x num_tested_contrast_diff x num_tested_pop_parameters =  size(data_reshaped)
 % data = logistic(cat(5,totsim{1,:}),2.5e2,.003);
 
-
+testedTrueThetaPlaid = unique(stim(1).truetheta);
+testedVplaid = unique(stim(1).vpld);
 %population tested parameters
 % plotTestedVelocitiesDirection
-plotPlaidVectors(testedTrueThetaPlaid,TestedGrat_2) %% TO DO DO DO DO DO DO DO DOD 
+plotPlaidVectors(repmat(testedTrueThetaPlaid,numel(TestedGrat_2),1),...
+            squeeze(TotTestedGrat(1,:,1,1,:)),...
+            repmat(testedVplaid,numel(TestedGrat_2),1), ...
+            squeeze(TotTestedVGrat(1,:,1,1,:))) 
 %% Look at the data
 
 % figure,
@@ -143,11 +157,11 @@ end
 % pop_resp = pop_resp_even;
 % If your data grid is, say, 8x11:
 sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
-sigma_t = pi/8;
-K = 2;
+sigma_t = 5/4*(pi/8);
+K = 1.8;
 logistic_slope = 5;
-logistic_centre = 0.5;
-max_iteration = 10;
+logistic_centre = 0.6;
+max_iteration = 5;
 
 
 sze_pop = size(pop_resp_even);
@@ -168,60 +182,83 @@ end
 
 PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
 
-figure, t = popresponse_tiled(cat(3,reshape(squeeze(e_2(:,:,3,:,1)),[sze_pop(1:2),1,sze_pop(4)]),...
-                    squeeze(PR_decoded(:,:,:,3,:,1,weight_mode)))); 
+figure, t = popresponse_tiled(cat(3,reshape(squeeze(e_2(:,:,7,:,1)),[sze_pop(1:2),1,sze_pop(4)]),...
+                    squeeze(PR_decoded(:,:,:,7,:,1,weight_mode)))); 
 title(t,'Population Activity Decoded (rows are different Iteration, col are contrast)')
 vx = reshape(vx,sze_pop(3:end));
 vy = reshape(vy,sze_pop(3:end));
+gradientMap = jet(numel(norm_param_sigma));
+
+n_orient = 8;    
+x = linspace(1,n_orient,100);
+x_8 = round(linspace(1,100,n_orient));
+
+figure,
+w_o = exp(-(x(x_8(3))-(1:n_orient)).^2./(2.*norm_param_sigma.^2));
+plot(w_o'),colororder(gradientMap), legend(string(norm_param_sigma)),
+title('Tested Orientation Pooling (sample for one neuron)')
 
 v = sqrt(vx.^2 + vy.^2);
 ori = atan2(vy,vx);
 % figure, plot(squeeze(v(2,:,:,2)))
-gradientMap = parula(numel(norm_param_sigma));
 for ii = 1:size(ori,1)
-    figure,
+    figure
+    subplot(2,1,1),
     hold on,
     estim = squeeze(ori(ii,:,:,weight_mode)); 
-    true = repmat(stim(1,1).truetheta,size(estim,1),size(estim,2));
+    true = repmat(stim(1,1).truetheta,size(estim,1),size(estim,2));    
     scatter(TestedDiff, abs(rad2deg(angdiff(estim,true))),'filled', ...
         'MarkerFaceAlpha',0.4,'MarkerEdgeColor','none','Color',gradientMap), %legend(string(rad2deg(TestedGrat_2)))
     plot(TestedDiff, abs(rad2deg(angdiff(estim,true)))); legend(string(norm_param_sigma))
     colororder(gradientMap)
-    ylim([0,150])
+    ylim([0,150]),grid on
+    title('angle error')
+
+    %velocity
+    estim = squeeze(v(ii,:,:,weight_mode)); 
+    true = repmat(stim(1,1).vpld,size(estim,1),size(estim,2));
+    subplot(2,1,2),
+    hold on,
+    scatter(TestedDiff, abs(true-estim),'filled', ...
+        'MarkerFaceAlpha',0.4,'MarkerEdgeColor','none','Color',gradientMap), %legend(string(rad2deg(TestedGrat_2)))
+    plot(TestedDiff, abs(true-estim)); legend(string(norm_param_sigma))
+    colororder(gradientMap)
+    title('velocity error'),
+    grid on,ylim([0,1.7])
 end
-%% Debug function
-% How to Choose Parameters Systematically:
-% Step 1: Start with logistic_centre
+% %% Debug function
+% % How to Choose Parameters Systematically:
+% % Step 1: Start with logistic_centre
+% % 
+% % Too high (>0.5): Kills most activity → single peak dominance
+% % Too low (<0.1): Preserves too much noise
+% % Sweet spot: 0.15 - 0.35 depending on your noise level
+% % 
+% % Step 2: Adjust K for competition strength
+% % 
+% % K = 1.5: Winner-take-all (only one peak survives)
+% % K = 2-3: Moderate competition (2-3 peaks can coexist)
+% % K > 3: Gentle competition (multiple peaks preserved)
+% % 
+% % Step 3: Tune spatial scales
+% % 
+% % Start with sigma_r and sigma_t roughly equal to your feature spacing
+% % If your velocity grid spacing is 2 units, try sigma_r = 0.5 to sigma_r = 2
+% % If orientation spacing is π/8, try sigma_t = π/16 to sigma_t = π/4
+% % 
+% % Step 4: Fine-tune logistic_slope
+% % 
+% % Low (1-3): Gentle contrast enhancement
+% % Medium (4-7): Moderate contrast
+% % High (8+): Aggressive thresholding
 % 
-% Too high (>0.5): Kills most activity → single peak dominance
-% Too low (<0.1): Preserves too much noise
-% Sweet spot: 0.15 - 0.35 depending on your noise level
+% pop_resp = pop_resp_even;
+% % If your data grid is, say, 8x11:
+% sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
+% sigma_t = pi/8;
+% K = 2;
+% logistic_slope = 5;
+% logistic_centre = 0.4;
+% max_iteration = 8;
 % 
-% Step 2: Adjust K for competition strength
-% 
-% K = 1.5: Winner-take-all (only one peak survives)
-% K = 2-3: Moderate competition (2-3 peaks can coexist)
-% K > 3: Gentle competition (multiple peaks preserved)
-% 
-% Step 3: Tune spatial scales
-% 
-% Start with sigma_r and sigma_t roughly equal to your feature spacing
-% If your velocity grid spacing is 2 units, try sigma_r = 0.5 to sigma_r = 2
-% If orientation spacing is π/8, try sigma_t = π/16 to sigma_t = π/4
-% 
-% Step 4: Fine-tune logistic_slope
-% 
-% Low (1-3): Gentle contrast enhancement
-% Medium (4-7): Moderate contrast
-% High (8+): Aggressive thresholding
-
-pop_resp = pop_resp_even;
-% If your data grid is, say, 8x11:
-sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
-sigma_t = pi/8;
-K = 2;
-logistic_slope = 5;
-logistic_centre = 0.5;
-max_iteration = 10;
-
-debugDecodeMxHat(pop_resp(:,:,1,1,1),param(1),sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
+% debugDecodeMxHat(pop_resp(:,:,1,1,1),param(1),sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
