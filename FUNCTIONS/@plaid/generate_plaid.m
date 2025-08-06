@@ -14,16 +14,16 @@ function II = generate_plaid(pld)
     for j=1:size(pld.vgrat,1)
         II = simulate(pld);
     %         set(gcf,'Name','test','pos',[1 620 200 200])
-        if pld.disp
-            figure
-            set(gcf,'color','k')
-            set(gca,'vis','off')
-            for i=1:pld.dur 
-                imagesc(II(:,:,i))
-                view(0,-90)
-                pause(0.05)
-            end
-        end
+        % if pld.disp
+        %     figure
+        %     set(gcf,'color','k')
+        %     set(gca,'vis','off')
+        %     for i=1:pld.dur 
+        %         imagesc(II(:,:,i))
+        %         view(0,-90)
+        %         pause(0.05)
+        %     end
+        % end
     end
 end
 
@@ -51,7 +51,7 @@ function II = analytic_express(pl)
 %     omega2 = 2*pi*m2n;
     [xx,yy]=meshgrid([-pl.apert_rad:pl.apert_rad],...
                      [-pl.apert_rad:pl.apert_rad]);
-    ap_mask = xx.^2+yy.^2>pl.apert_rad.^2;
+    % ap_mask = xx.^2+yy.^2>pl.apert_rad.^2;
 
     [C1,R1,C1S]=grating_geometry(pl.theta_g(1));
     [C2,R2,C2S]=grating_geometry(pl.theta_g(2));
@@ -81,7 +81,7 @@ function II = analytic_express(pl)
                 1/(k_gauss*pl.k(1))));
         end
 
-        pRe(ap_mask) = ceil(mean([c1,c2]));
+        % pRe(ap_mask) = ceil(mean([c1,c2]));
 
         i=i+1;
         II(:,:,i) = pRe;

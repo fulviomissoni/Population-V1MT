@@ -90,6 +90,11 @@ C1{1} = S0{1}.^2 + S0{2}.^2;
 C1{2} = S0{3}.^2 + S0{4}.^2;
 
 clear S0
+% THRESHOLDING
+th_C(1) = median(C1{1}(:));th_C(2) = median(C1{2}(:));
+
+C1{1}(C1{1}(:)<0.01*th_C(1)) = 0;
+C1{2}(C1{2}(:)<0.01*th_C(2)) = 0;
 
 % NORMALIZATION STAGE OF COMPLEX-CELLS
 a1 = alpha(1);
@@ -115,6 +120,7 @@ for i = 1:2
     S = permute(S,[2 3 1]);
     % m = 1/mean(S,'all');
     m = 1;
+    % eps = 0.025*mean(S,'all');
     %orientation pooling
     S = repmat(sum(pagemtimes(w_o, S),2),[1 v 1]); %apply orientation weighting
     
@@ -147,9 +153,23 @@ for i = 1:2
     % S = reshape(S,n_orient,v,sy*sx*n_frames);
     S = permute(S,[3 1 2]);
     S = reshape(S,1,[]);
-    
-    C1{i} = C1_pooled{i}./(a1 + a2*m*S);
+    %THRESHOLDING S
+    S(S<0.3*median(S(:))) = 1e-19;
+    C1_pooled{i}(S<0.3*median(S(:))) = 1e-19;
+    % a1 = 0.001*mean(C1_pooled{i},'all');
+    % a2 = a1 / mean(S(:));
+    a1 = 1; a2 = 1;
+    C1{i} = C1_pooled{i}./(a1 + a2*S);
+    % orientation_activity = repmat(squeeze( ...
+    %     prctile( ...
+    %     reshape(C1_pooled{i},sze), ...
+    %     90,[1,2,5]))',[sze(1),1,sze(2),sze(3),sze(5)]);
+    % orientation_activity  = permute(orientation_activity,[1 , 3, 4, 2, 5]);
+    % global_activity = prctile(C1_pooled{i}(:),95);
+    % C1{1} = C1_pooled{i}./(a1+ + 0.005*global_activity + S);
+    % C1{i} = C1_pooled{i}./(orientation_activity(:)' + S);
     C1{i}(isnan(C1{i})) = 0;
+    % C1{i}(C1)
 end
 
 for i=1:2

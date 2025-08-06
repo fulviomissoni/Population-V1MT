@@ -3,7 +3,6 @@
 clear
 % close all
 clc
-
 addpath FUNCTIONS
 
 % NOTE: stim.dur is something that I used to initialise the stimulus
@@ -67,7 +66,7 @@ param.filter_sample = filter_sample;
 param.sigma_pool    = sigma_pool;
 % param.num_or_ch_pooled = num_or_ch_pooled;
 
-param.diff_c = linspace(0,1,11);
+param.diff_c = linspace(.25,.75,11);
 diff_c = param.diff_c;
 vplaid = 1.8;
 truetheta = deg2rad(30);
@@ -99,8 +98,8 @@ str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
 %Note: I don't work on alpha1 in the normalisation stage (C1/(a1 + a2*pool))
 
 alpha2 = 1;
-% alpha1 = 1e-17;
-alpha1 = 1;
+alpha1 = 1e-17;
+% alpha1 = 1;
 param.norm_param = [alpha1, alpha2];
 %orientation pooling is managed by an exponential rule
 x = linspace(1,n_orient,100);
@@ -135,7 +134,8 @@ for i = 1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
 
-    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0,'disp',0);
+    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0,'disp',1);
+    
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
     % stim.disp = 0;
@@ -144,8 +144,8 @@ for i = 1:numel(sigma_orient)
     %SIMULATION 
     % param.num_or_ch_pooled = num_or_pool(i);
     w_o = exp(-(x(x_8)-(1:n_orient)').^2./(2.*sigma_orient(i).^2));
-
-    param.orient_weighting = w_o;
+        
+    param.orient_weighting = w_o./sum(w_o(:));
     param.sigma_orient = sigma_orient(i);
     [e,param] = motionPopV1MT(param,stim); % remember 'e' (population activity) will be a matrix of n_complex_cell X n_orient X n_vel X n_stim_parameters (in this case the length of diff_c)
     th = 2e-2;    
@@ -216,7 +216,7 @@ for i=1:numel(sigma_orient)
     stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)], ...
         vplaid,diff_c(:),k0,filter_sample,0 ...
         ,'type',"plaid_noise", ...
-        'sigma_noise',.5);
+        'sigma_noise',.25,'disp',1);
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
     % stim.disp = 0;

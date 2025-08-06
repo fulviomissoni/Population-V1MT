@@ -2,17 +2,9 @@ clear variables
 close all
 
 addpath FUNCTIONS\
-% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250722_122439.mat")
-% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250730_183038.mat")
-% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250731_142016.mat")
-% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250731_164043.mat") %TO DELETE
-% load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250731_164527.mat")
-load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250801_132719.mat")
 
-% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250722_122439.mat")
-% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250730_175259.mat")
-% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250731_142016.mat")
-% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250731_164527.mat") %TO DELETE
+load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250805_190629.mat")
+% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250805_152411.mat")
 
 % M = 3e5; %compute from population response to plaid
 % M = max(data,[],"all");
@@ -156,21 +148,21 @@ end
 
 % pop_resp = pop_resp_even;
 % If your data grid is, say, 8x11:
-sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
-sigma_t = 5/4*(pi/8);
-K = 1.8;
-logistic_slope = 5;
-logistic_centre = 0.6;
+sigma_r = 2*(param(1).pref_vel(end) - param(1).pref_vel(end-1));
+sigma_t = 2*(pi/8);
+K = 1.5;
+logistic_slope = 6;
+logistic_centre = 0.5;
 max_iteration = 5;
 
 
 sze_pop = size(pop_resp_even);
 num_cond = prod(sze_pop(3:end));
-weight_mode = 2;
+weight_mode = 1;
 %Activity Decoding
 for ii = 1:num_cond
     [PR_decoded(:,:,:,ii),vx(ii),vy(ii)] = DecodeMxHat( ...
-                                squeeze(pop_resp_even(:,:,ii)), ...  %Activity
+                                (squeeze(pop_resp_even(:,:,ii))), ...  %Activity
                                 param(1), ...                                  %Population Parameters
                                 sigma_r, ...                                %see code
                                 sigma_t, ...
@@ -182,9 +174,13 @@ end
 
 PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
 
-figure, t = popresponse_tiled(cat(3,reshape(squeeze(e_2(:,:,7,:,1)),[sze_pop(1:2),1,sze_pop(4)]),...
+figure, t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,7,:,1))),[sze_pop(1:2),1,sze_pop(4)]),...
                     squeeze(PR_decoded(:,:,:,7,:,1,weight_mode)))); 
-title(t,'Population Activity Decoded (rows are different Iteration, col are contrast)')
+% %Decode Activity with weighted activity
+% for ii = 1:num_cond
+%     [vx(ii),vy(ii)] = decodingCM(squeeze(pop_resp_even(:,:,ii)),param(1));
+% end
+% title(t,'Population Activity Decoded (rows are different Iteration, col are contrast)')
 vx = reshape(vx,sze_pop(3:end));
 vy = reshape(vy,sze_pop(3:end));
 gradientMap = jet(numel(norm_param_sigma));
