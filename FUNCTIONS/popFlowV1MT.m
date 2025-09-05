@@ -1,4 +1,4 @@
-Drfunction C1 = popFlowV1MT(II,param)
+function C1 = popFlowV1MT(II,param)
 % This function computes a distributed analysis of a stack of visual images 
 % by means of a population of motion energy detectors. 
 %
@@ -49,7 +49,7 @@ C1 = populationV1MT(F,param);
 
 clear F
 
-
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [C1] = populationV1MT(G,param)
 
@@ -172,9 +172,9 @@ for i = 1:2
     % C1{1} = C1_pooled{i}./(a1+ + 0.005*global_activity + S);
     % C1{i} = C1_pooled{i}./(orientation_activity(:)' + S);
     C1{i}(isnan(C1{i})) = 0;
+    C1{i} = squeeze(reshape(C1{i},sze));
+
     % C1{i}(C1)
 end
 
-for i=1:2
-    C1{i} = squeeze(reshape(C1{i},sze));
 end

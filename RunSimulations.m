@@ -103,7 +103,7 @@ alpha1 = 1e-17;
 param.norm_param = [alpha1, alpha2];
 %orientation pooling is managed by an exponential rule
 x = linspace(1,n_orient,100);
-sigma_orient = .25:5:15;
+sigma_orient = [.25, 1, 10];
 x_8 = round(linspace(1,100,n_orient));
 % for ii = 1:numel(sigma_orient)
 %     % figure,
@@ -155,9 +155,9 @@ for i = 1:numel(sigma_orient)
     theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
     [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
     
-    mypath = 'SIMULATIONS\PlaidAnalysis\NoNoise\';
-    namesimtmp = [mypath,'tmpSimulationTot_NormEffect_',num2str(i),'_',str];
-    save(namesimtmp,'e','stim','param')
+    % mypath = 'SIMULATIONS\PlaidAnalysis\NoNoise\';
+    % namesimtmp = [mypath,'tmpSimulationTot_NormEffect_',num2str(i),'_',str];
+    % save(namesimtmp,'e','stim','param')
     totsim{1,i} = e;
     totsim{2,i} = stim;
     totsim{3,i} = param;
@@ -188,7 +188,7 @@ alpha2 = 1;
 alpha1 = 1;
 param.norm_param = [alpha1, alpha2];
 x = linspace(1,n_orient,100);
-sigma_orient = .25:5:15;
+sigma_orient = [.25, 1, 10];
 x_8 = round(linspace(1,100,n_orient));
 % alpha2 = linspace(0,1,11);
 % alpha1 = [1,zeros(1,10)];
@@ -238,9 +238,9 @@ for i=1:numel(sigma_orient)
     theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;    
     [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
     
-    mypath = 'SIMULATIONS\PlaidAnalysis\Noise\';
-    namesimtmp = [mypath,'tmpSimulationTot_Noise_NormEffect_',num2str(i),'_',str];
-    save(namesimtmp,'e','stim','param')
+    % mypath = 'SIMULATIONS\PlaidAnalysis\Noise\';
+    % namesimtmp = [mypath,'tmpSimulationTot_Noise_NormEffect_',num2str(i),'_',str];
+    % save(namesimtmp,'e','stim','param')
     totsim{1,i} = e;
     totsim{2,i} = stim;
     totsim{3,i} = param;
