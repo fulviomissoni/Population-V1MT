@@ -3,8 +3,8 @@ close all
 
 addpath FUNCTIONS\
 
-load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250805_190629.mat")
-% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect20250805_152411.mat")
+load("SIMULATIONS\PlaidAnalysis\NoNoise\SimulationTot_NormEffect20250807_123543.mat")
+% load("SIMULATIONS\PlaidAnalysis\Noise\SimulationTot_Noise_NormEffect_20250806_210923_Seed_3.mat")
 
 % M = 3e5; %compute from population response to plaid
 % M = max(data,[],"all");
@@ -148,12 +148,13 @@ end
 
 % pop_resp = pop_resp_even;
 % If your data grid is, say, 8x11:
-sigma_r = 2*(param(1).pref_vel(end) - param(1).pref_vel(end-1));
-sigma_t = 2*(pi/8);
-K = 1.5;
-logistic_slope = 6;
-logistic_centre = 0.5;
-max_iteration = 5;
+sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
+% sigma_r = 0.5;
+sigma_t = (pi/8);
+K = 2;
+logistic_slope = 2;
+logistic_centre = 0.2;
+max_iteration = 3;
 
 
 sze_pop = size(pop_resp_even);
@@ -174,8 +175,8 @@ end
 
 PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
 
-figure, t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,7,:,1))),[sze_pop(1:2),1,sze_pop(4)]),...
-                    squeeze(PR_decoded(:,:,:,7,:,1,weight_mode)))); 
+figure, t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,4,:,1))),[sze_pop(1:2),1,sze_pop(4)]),...
+                    squeeze(PR_decoded(:,:,:,4,:,1,weight_mode)))); 
 % %Decode Activity with weighted activity
 % for ii = 1:num_cond
 %     [vx(ii),vy(ii)] = decodingCM(squeeze(pop_resp_even(:,:,ii)),param(1));

@@ -91,11 +91,13 @@ C1{2} = S0{3}.^2 + S0{4}.^2;
 
 clear S0
 % THRESHOLDING
-th_C(1) = median(C1{1}(:));th_C(2) = median(C1{2}(:));
+th_C(1) = median(C1{1}(:));
+th_C(2) = median(C1{2}(:));
 
-C1{1}(C1{1}(:)<0.01*th_C(1)) = 0;
-C1{2}(C1{2}(:)<0.01*th_C(2)) = 0;
-
+% C1{1}(C1{1}(:)<1e-18*th_C(1)) = 0;
+% C1{2}(C1{2}(:)<1e-18*th_C(2)) = 0;
+% C1{1} = C1{1}(:)./mean(C1{1}(:));
+% C1{2} = C1{2}(:)./mean(C1{2}(:));
 % NORMALIZATION STAGE OF COMPLEX-CELLS
 a1 = alpha(1);
 a2 = alpha(2);
@@ -104,6 +106,7 @@ a2 = alpha(2);
 
 for i = 1:2
     C1_pooled{i} = reshape(C1{i},sy,sx,n_frames*n_orient*v);
+    C1_pooled{i} = C1_pooled{i}./repmat(mean(C1_pooled{i},3),1,1,n_frames*n_orient*v);
     S = zeros(sy,sx,n_frames*n_orient*v);
     %spatial pooling of normalization pool
     for p = 1:n_frames*n_orient*v
@@ -154,11 +157,11 @@ for i = 1:2
     S = permute(S,[3 1 2]);
     S = reshape(S,1,[]);
     %THRESHOLDING S
-    S(S<0.3*median(S(:))) = 1e-19;
-    C1_pooled{i}(S<0.3*median(S(:))) = 1e-19;
+    % S(S<1e-19*median(S(:))) = 1e-19;
+    C1_pooled{i}(S<1e-19*median(S(:))) = 1e-19;
     % a1 = 0.001*mean(C1_pooled{i},'all');
     % a2 = a1 / mean(S(:));
-    a1 = 1; a2 = 1;
+    a1 = 0; a2 = 1;
     C1{i} = C1_pooled{i}./(a1 + a2*S);
     % orientation_activity = repmat(squeeze( ...
     %     prctile( ...

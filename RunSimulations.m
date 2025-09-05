@@ -71,7 +71,7 @@ diff_c = param.diff_c;
 vplaid = 1.8;
 truetheta = deg2rad(30);
 theta_grat1 = truetheta + deg2rad(30);
-theta_grat2 = truetheta + deg2rad(linspace(-45,90,8));
+theta_grat2 = truetheta + deg2rad(linspace(-45,80,4));
 % theta_grat2 = truetheta + deg2rad(70);
 [tgrat(:,1), tgrat(:,2)] = meshgrid(theta_grat1,theta_grat2);
 % vgrat = reshape(vgrat,[],2);
@@ -103,7 +103,7 @@ alpha1 = 1e-17;
 param.norm_param = [alpha1, alpha2];
 %orientation pooling is managed by an exponential rule
 x = linspace(1,n_orient,100);
-sigma_orient = .25:1.5:15;
+sigma_orient = .25:5:15;
 x_8 = round(linspace(1,100,n_orient));
 % for ii = 1:numel(sigma_orient)
 %     % figure,
@@ -134,7 +134,7 @@ for i = 1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
 
-    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0,'disp',1);
+    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0,'disp',0);
     
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
@@ -188,7 +188,7 @@ alpha2 = 1;
 alpha1 = 1;
 param.norm_param = [alpha1, alpha2];
 x = linspace(1,n_orient,100);
-sigma_orient = .25:1.5:15;
+sigma_orient = .25:5:15;
 x_8 = round(linspace(1,100,n_orient));
 % alpha2 = linspace(0,1,11);
 % alpha1 = [1,zeros(1,10)];
@@ -208,15 +208,15 @@ param.norm_param = [alpha1, alpha2];
 %initialise the image
 param.num_or_ch_pooled = 8;
 totsim = cell(3,numel(sigma_orient));
-
+for j = 1:10
 for i=1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
-
+    rng(j)
     stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)], ...
         vplaid,diff_c(:),k0,filter_sample,0 ...
         ,'type',"plaid_noise", ...
-        'sigma_noise',.25,'disp',1);
+        'sigma_noise',.25,'disp',0);
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
     % stim.disp = 0;
@@ -245,15 +245,15 @@ for i=1:numel(sigma_orient)
     totsim{2,i} = stim;
     totsim{3,i} = param;
     toc
-    disp(['Simulation ',num2str(i), ' finished'])
+    disp(['Simulation ',num2str(i),' Seed', num2str(j), ' finished'])
 end
 % param.norm_param = [alpha1, alpha2];
 % param.num_or_ch_pooled = num_or_ch_pooled;
 mypath = 'SIMULATIONS\PlaidAnalysis\Noise\';
-namesim = [mypath,'SimulationTot_Noise_NormEffect',str];
+namesim = [mypath,'SimulationTot_Noise_NormEffect_',str,'_Seed_',num2str(j)];
 
 save(namesim,'totsim')
-
+end
 
 %% POP RESPONSE TO MOVING RDS
 % This is related to the same of step of before (having a broader frequency
