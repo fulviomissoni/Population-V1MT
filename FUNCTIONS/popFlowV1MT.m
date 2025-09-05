@@ -1,4 +1,4 @@
-function C1 = popFlowV1MT(II,param)
+Drfunction C1 = popFlowV1MT(II,param)
 % This function computes a distributed analysis of a stack of visual images 
 % by means of a population of motion energy detectors. 
 %
