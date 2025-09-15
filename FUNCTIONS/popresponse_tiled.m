@@ -17,13 +17,13 @@ titlestr = p.Results.Titles; % Retrieve the title from parsed input
 
 
 
-t = tiledlayout(sze(3),sze(4));
+t = tiledlayout(sze(3),sze(4),'TileSpacing','none');
 
 for i = 1:sze(3)
 for j = 1:sze(4)
 nexttile,
 surfPolar(squeeze(e(:,:,i,j)),0,90,'false',linspace(-2,2,11));
-colormap(jet(256))
+colormap(hot(256))
 % axis equal
 
 title(titlestr(i,j))

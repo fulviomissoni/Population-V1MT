@@ -90,9 +90,9 @@ C1{1} = S0{1}.^2 + S0{2}.^2;
 C1{2} = S0{3}.^2 + S0{4}.^2;
 
 clear S0
-% THRESHOLDING
-th_C(1) = median(C1{1}(:));
-th_C(2) = median(C1{2}(:));
+% % THRESHOLDING
+% th_C(1) = median(C1{1}(:));
+% th_C(2) = median(C1{2}(:));
 
 % C1{1}(C1{1}(:)<1e-18*th_C(1)) = 0;
 % C1{2}(C1{2}(:)<1e-18*th_C(2)) = 0;
@@ -105,8 +105,8 @@ a2 = alpha(2);
 %Memory allocation:
 
 for i = 1:2
-    C1_pooled{i} = reshape(C1{i},sy,sx,n_frames*n_orient*v);
-    C1_pooled{i} = C1_pooled{i}./repmat(mean(C1_pooled{i},3),1,1,n_frames*n_orient*v);
+    C1_pooled{i} = C1{i}./max(C1{i});
+    C1_pooled{i} = reshape(C1_pooled{i},sy,sx,n_frames*n_orient*v);
     S = zeros(sy,sx,n_frames*n_orient*v);
     %spatial pooling of normalization pool
     for p = 1:n_frames*n_orient*v
@@ -116,65 +116,28 @@ for i = 1:2
         S(:,:,p) = tmp2;
         C1_pooled{i}(:,:,p) = tmp2;
     end
-    % C1_pooled{i} = reshape(C1_pooled{i},sy*sx*n_frames,n_orient,v);
+
     C1_pooled{i} = reshape(C1_pooled{i},1,[]);
 
     S = reshape(S,sy*sx*n_frames,n_orient,v);
     S = permute(S,[2 3 1]);
-    % m = 1/mean(S,'all');
-    m = 1;
-    % eps = 0.025*mean(S,'all');
+
     %orientation pooling
     S = repmat(sum(pagemtimes(w_o, S),2),[1 v 1]); %apply orientation weighting
     
-%     a2 = 1;
-%     a2 = 1/max(max(S));
-
-    %orientation pooling
-
-%     % if num_or_ch_pooled == 8
-%     %     S = sum(S.*w_orient,[1,2]);
-%     %     S = repmat(S,[n_orient v 1]);
-%     % end
-%     % if num_or_ch_pooled == 1
-%     %     S = sum(S,2);
-%     %     S = repmat(S,[1 v 1]);
-%     % end
-% %     if num_or_ch_pooled~=8
-% %         index_o = circshift(index_o,floor(num_or_ch_pooled/2));
-% %         for o = 1:n_orient  
-% %             S(o,:) = sum(tmp(index_o(1:1+num_or_ch_pooled-1),:));
-% %             index_o = circshift(index_o,-floor(num_or_ch_pooled/2));
-% %         end
-% %     end
-% %     if num_or_ch_pooled==8
-% %         S = repmat(sum(tmp),[n_orient,1]);
-% %     end
-% %     if num_or_ch_pooled==1
-% %         S = tmp;
-% %     end
-    % S = reshape(S,n_orient,v,sy*sx*n_frames);
     S = permute(S,[3 1 2]);
     S = reshape(S,1,[]);
     %THRESHOLDING S
     % S(S<1e-19*median(S(:))) = 1e-19;
-    C1_pooled{i}(S<1e-19*median(S(:))) = 1e-19;
+    % C1_pooled{i}(S<prctile(S(:),0.25)) = 1e-15;
     % a1 = 0.001*mean(C1_pooled{i},'all');
     % a2 = a1 / mean(S(:));
-    a1 = 0; a2 = 1;
+    a1 = prctile(S(:),0.025); a2 = 1;
     C1{i} = C1_pooled{i}./(a1 + a2*S);
-    % orientation_activity = repmat(squeeze( ...
-    %     prctile( ...
-    %     reshape(C1_pooled{i},sze), ...
-    %     90,[1,2,5]))',[sze(1),1,sze(2),sze(3),sze(5)]);
-    % orientation_activity  = permute(orientation_activity,[1 , 3, 4, 2, 5]);
-    % global_activity = prctile(C1_pooled{i}(:),95);
-    % C1{1} = C1_pooled{i}./(a1+ + 0.005*global_activity + S);
-    % C1{i} = C1_pooled{i}./(orientation_activity(:)' + S);
+
     C1{i}(isnan(C1{i})) = 0;
     C1{i} = squeeze(reshape(C1{i},sze));
 
-    % C1{i}(C1)
 end
 
 end

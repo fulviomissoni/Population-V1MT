@@ -1,7 +1,7 @@
 %Run simulations 
 
 clear
-% close all
+close all
 clc
 addpath FUNCTIONS
 
@@ -26,7 +26,7 @@ addpath FUNCTIONS
 % % RELATIVE BANDWIDTH => B=0.0833;
 
 %FILTER 43x43
-filter_file = 'FILTERS/Gt43B0.0208f0.063.mat';
+filter_file = 'FILTERS/New/Gt43B0.0210f0.063.mat';
 k0 = 0.063;             %SPATIAL FREQUENCY  [cycle/pix]
 samples = 127;          %STIMULUS DIMENSION [pix] 
 %choice size big enough to obtain good tuning curves in response to RDS
@@ -38,7 +38,10 @@ filter_sample = 43;
 ft_choice = 'gabor'; % 'gabor'; 'exp_decay'; 'adelson_bergen'
 %PREFERRED VELOCITY
 % v = 0;   
-v  = linspace(-1,1,11)*2;
+v  = linspace(-1,1,11)*round(1/2*1/k0);    %why? because max velocity is dependent on k0
+                                           %v = fsample/k0, fsample is 1pix
+                                           %or 1 frame so the nyquist is
+                                           %1/2
 % kk = [-3 -1.5  0.5  1.5 3]; %Preferred velocity with Adelson_Bergen
 
 %NORMALIZATION VALUES
@@ -68,7 +71,7 @@ param.sigma_pool    = sigma_pool;
 
 param.diff_c = linspace(.25,.75,11);
 diff_c = param.diff_c;
-vplaid = 1.8;
+vplaid = 6.4;
 truetheta = deg2rad(30);
 theta_grat1 = truetheta + deg2rad(30);
 theta_grat2 = truetheta + deg2rad(linspace(-45,80,4));
@@ -166,7 +169,7 @@ for i = 1:numel(sigma_orient)
 end
 % param.norm_param = [alpha1, alpha2];
 % param.num_or_ch_pooled = num_or_ch_pooled;
-mypath = 'SIMULATIONS\PlaidAnalysis\NoNoise\';
+mypath = 'SIMULATIONS\PlaidAnalysis\New\NoNoise\';
 namesim = [mypath,'SimulationTot_NormEffect',str];
 
 save(namesim,'totsim')
@@ -249,7 +252,7 @@ for i=1:numel(sigma_orient)
 end
 % param.norm_param = [alpha1, alpha2];
 % param.num_or_ch_pooled = num_or_ch_pooled;
-mypath = 'SIMULATIONS\PlaidAnalysis\Noise\';
+mypath = 'SIMULATIONS\PlaidAnalysis\New\Noise\';
 namesim = [mypath,'SimulationTot_Noise_NormEffect_',str,'_Seed_',num2str(j)];
 
 save(namesim,'totsim')

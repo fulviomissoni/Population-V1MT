@@ -101,10 +101,10 @@ sze = size(squeeze(pop_resp(:,:)));
         %iterates mexican hat weigthing function
         CT = reshape(tmp,sze(1)*sze(2),1);
         CT(CT<th) = 0;
-        M = max(CT,[],'all');
+        % M = max(CT,[],'all');
         % CT = M*1./(1+exp(-logistic_slope*(squeeze(CT)-M*logistic_centre)));
         CT = MX*CT;
-        CT = CT./mean(CT,'all','omitnan');
+        % CT = CT./max(CT,[],'all','omitnan');
         pop_resp_V1MT(:,:,indResp) = reshape(CT,sze);
         tmp = CT;
     end

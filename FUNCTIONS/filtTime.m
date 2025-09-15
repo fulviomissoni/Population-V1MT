@@ -103,8 +103,9 @@ for index=1:n_vel
         end
         po=(k*t).^n(2).*exp(-k.*t).*(1/factorial(n(2))-(k.*t).^2/factorial(n(2)+2));
         %energy normalization
-        pe=pe*(1/sqrt(trapz(1,abs(pe).^2)));
-        po=po*(1/sqrt(trapz(1,abs(po).^2)));
+        den = sqrt(sum((pe).^2 +(po).^2));
+        pe=pe*(1/den);
+        po=po*(1/den);
         pe(isnan(pe)) = 0;            
         pe(isinf(pe)) = 1;
         po(isnan(po)) = 0;            

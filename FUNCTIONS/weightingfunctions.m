@@ -31,5 +31,9 @@ W(:,:,4) = exp(-(xx(:).*cos(tt(:)'-tt(:)) - xx(:)').^2./(2*sigmaGabor.^2)).* ...
     cos(2*pi*1./(4*xx(:)').*(xx(:).*cos(tt(:)'-tt(:)) - xx(:)')); %inviluppo Gabor per gestire la quantità e la posizione dei pesi negativi
 % W2 = reshape(reshape(W2,8,11,8,11)./max(reshape(W2,8,11,8,11),[],4),88,88);
 W(:,:,5) = (xx(:).*cos(tt(:)-tt(:)') -xx(:)'); %Andre pesi originali)
+
+
+%
 W(isnan(W)) = 0;
+% W = W./repmat(sum(W,[1,2]),88,88,1);
 

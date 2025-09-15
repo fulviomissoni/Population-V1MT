@@ -5,12 +5,13 @@ addpath FUNCTIONS\
 
 folder2check = "Noise";
 
-folder = dir(strcat("SIMULATIONS\PlaidAnalysis\",folder2check));
+folder = dir(strcat("SIMULATIONS\PlaidAnalysis\New\",folder2check));
 
 totFile = numel(folder) - 2;
+weight_mode = 2;
 
 for numFile = 1:totFile
-    load(strcat("SIMULATIONS\PlaidAnalysis\",folder2check,"\",folder(numFile+2).name))
+    load(strcat("SIMULATIONS\PlaidAnalysis\New\",folder2check,"\",folder(numFile+2).name))
     
     % M = 3e5; %compute from population response to plaid
     % M = max(data,[],"all");
@@ -166,7 +167,6 @@ for numFile = 1:totFile
     
     sze_pop = size(pop_resp_even);
     num_cond = prod(sze_pop(3:end));
-    weight_mode = 1;
     %Activity Decoding
     for ii = 1:num_cond
         [PR_decoded(:,:,:,ii),vx(ii),vy(ii)] = DecodeMxHat( ...
@@ -182,7 +182,7 @@ for numFile = 1:totFile
     
     PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
     
-    figure, t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,4,:,1))),[sze_pop(1:2),1,sze_pop(4)]),...
+    figure(6), t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,4,:,1))),[sze_pop(1:2),1,sze_pop(4)]),...
                         squeeze(PR_decoded(:,:,:,4,:,1,weight_mode)))); 
     % %Decode Activity with weighted activity
     % for ii = 1:num_cond
@@ -217,7 +217,7 @@ for numFile = 1:totFile
         colororder(gradientMap)
         ylim([0,150]),grid on
         title('angle error')
-    
+        ylabel("[deg]"),xlabel("[delta-contrast]")
         %velocity
         estim = squeeze(v(ii,:,:,weight_mode)); 
         true = repmat(stim(1,1).vpld,size(estim,1),size(estim,2));
@@ -229,6 +229,8 @@ for numFile = 1:totFile
         colororder(gradientMap)
         title('velocity error'),
         grid on,ylim([0,1.7])
+        ylabel("[pix/frames]"),xlabel("[delta-contrast]")
+
     end
     % %% Debug function
     % % How to Choose Parameters Systematically:
