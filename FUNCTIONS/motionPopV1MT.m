@@ -9,7 +9,7 @@ if ~isfield(stim,'type')
     error('Define type of the stimulus!! Options are: moving grats, plaids, or moving RDS')
 end
 field_names{1} = 'dur'; 
-field_names{2} = 'vgrat'; 
+field_names{2} = 'truetheta'; 
 % field_names{3} = 'theta_g';
 % fieldNames{4} = 'truetheta'; fieldNames{5} = 'contrast_g';
 % fieldNames{6} = 'mode'; fieldNames{7} = 'vel_stim';
@@ -51,8 +51,8 @@ switch type
         end
     case 'RDS_moving'         
         for num_stim = 1:length(stim.truetheta)
-                vx = stim(num_stim).vgrat(1).*cos(stim.truetheta(num_stim));
-                vy = stim(num_stim).vgrat(2).*sin(stim.truetheta(num_stim));
+                vx = stim.vstim(num_stim).*cos(stim.truetheta(num_stim));
+                vy = stim.vstim(num_stim).*sin(stim.truetheta(num_stim));
                 % scale_ind = 4; %do not remember what scale means, it should be related to different scales of the image from same size to bigger ones
                 scale_ind = 1;
                 II{num_stim} = movingRDS_MS(samples,samples,dur,scale_ind,vx, vy);

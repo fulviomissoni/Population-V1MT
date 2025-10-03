@@ -269,7 +269,7 @@ clear stim
 stim.type = 'RDS_moving';
 stim.disp = 0;
 stim.truetheta = 0;
-stim.vgrat =  [vplaid , 0]; %velocity in px/sec; 
+stim.vstim =  [vstim , 0]; %velocity in px/sec; 
 stim.dur = 43;
 stim.theta_g = [0, 0];
 num_or_ch_pooled = 1;

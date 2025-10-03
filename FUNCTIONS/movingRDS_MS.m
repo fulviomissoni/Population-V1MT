@@ -5,7 +5,7 @@ function OUT = movingRDS_MS(samples_x,samples_y,dur,scale,velx,vely)
 %horizontally. Note that that
 [OUT] = randomDotMS(0, 0, samples_x, samples_y, scale);
 OUT = OUT(:,:,1);
-VY = vely;
+VY = velx;
 VX = vely;
 for i=2:dur
     % frame = circshift(OUT(:,:,i-1),[floor(vely) floor(velx)]);
