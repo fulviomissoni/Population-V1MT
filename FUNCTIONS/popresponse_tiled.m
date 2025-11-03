@@ -1,4 +1,4 @@
-function varargout = popresponse_tiled(e,varargin)
+function varargout = popresponse_tiled(e,prefval,varargin)
 
 sze = size(e); % Determine the size of the input data
 if numel(sze) == 3
@@ -22,7 +22,7 @@ t = tiledlayout(sze(3),sze(4),'TileSpacing','none');
 for i = 1:sze(3)
 for j = 1:sze(4)
 nexttile,
-surfPolar(squeeze(e(:,:,i,j)),0,90,'false',linspace(-2,2,11));
+surfPolar(squeeze(e(:,:,i,j)),0,90,'false',prefval);
 colormap(hot(256))
 % axis equal
 

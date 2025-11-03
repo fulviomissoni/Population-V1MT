@@ -3,6 +3,7 @@
 
 clear; close all; clc;
 addpath FUNCTIONS
+addpath Learning_Methods\
 
 %% SETUP (same as before)
 filter_file = 'FILTERS/New/Gt43B0.0210f0.063.mat';
@@ -214,7 +215,7 @@ colorbar; title('Final');
 
 % Tuning curves
 for i = 1:min(20, n_neurons)
-    subplot(5, 4, 5+i-1);
+    subplot(5, 5, 5+i-1);
     w_2d = reshape(W(i, :), [n_orient, n_vel]);
     imagesc(param.pref_vel, 1:n_orient, w_2d);
     colorbar;
@@ -222,7 +223,8 @@ for i = 1:min(20, n_neurons)
     if i > 16, xlabel('Vel'); end
     if mod(i-1, 4) == 0, ylabel('Or'); end
 end
-
+figure, popresponse_tiled(permute(reshape(W,5,5,8,11),[3,4,1,2])), title('Learned Weights per MT cell')
+figure, popresponse_tiled(reshape(activities_all,8,11,9,12)), title('V1 activity')
 %% SAVE
 save_filename = sprintf('freq_sensitive_%s.mat', datestr(now, 'yyyymmdd_HHMMSS'));
 save(save_filename, 'W', 'winner_counts', 'selectivity', 'param');
