@@ -8,7 +8,7 @@ folder2check = "Noise";
 folder = dir(strcat("SIMULATIONS\PlaidAnalysis\New\",folder2check));
 
 totFile = numel(folder) - 2;
-weight_mode = 2;
+weight_mode = 1;
 
 for numFile = 1:totFile
     load(strcat("SIMULATIONS\PlaidAnalysis\New\",folder2check,"\",folder(numFile+2).name))
@@ -182,8 +182,9 @@ for numFile = 1:totFile
     
     PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
     
-    figure(6), t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,4,:,1))),[sze_pop(1:2),1,sze_pop(4)]),...
-                        squeeze(PR_decoded(:,:,:,4,:,1,weight_mode)))); 
+    figure(6), t = popresponse_tiled_countour(cat(3,reshape((squeeze(e_2(:,:,4,:,3))),[sze_pop(1:2),1,sze_pop(4)]),...
+                        squeeze(PR_decoded(:,:,:,4,:,3,weight_mode))), ...
+                        param(1).pref_vel); 
     % %Decode Activity with weighted activity
     % for ii = 1:num_cond
     %     [vx(ii),vy(ii)] = decodingCM(squeeze(pop_resp_even(:,:,ii)),param(1));

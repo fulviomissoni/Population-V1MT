@@ -119,6 +119,7 @@ pop_resp_V1MT = reshape(pop_resp_V1MT,param.n_orient,numel(param.pref_vel),max_i
 subPopResp = squeeze(pop_resp_V1MT(:,:,max_iteration));
 M = sum(sum(subPopResp));
 %centre of mass decoding
+tt = tt - pi*(xx<0) - pi/2;
 vx = squeeze(sum(sum(subPopResp.*(xx.*cos(tt)),1),2)./M);
 vy = squeeze(sum(sum(subPopResp.*(xx.*sin(tt)),1),2)./M);
 end

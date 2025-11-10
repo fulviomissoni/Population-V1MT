@@ -25,22 +25,22 @@ w_o = exp(-(x(x_8)-(1:n_orient)').^2./(2.*sigma_orient.^2));
 param.orient_weighting = w_o./sum(w_o(:));
 
 %% learning params (adjust if you want)
-n_neurons = 25;                         % M (MT neurons)
+n_neurons = 88;                         % M (MT neurons)
 n_components = length(param.pref_vel) * param.n_orient;  % input dimensionality (N)
-eta0 = 5e-3;            % initial learning rate
+eta0 = 3e-3;            % initial learning rate
 eta = eta0;
-anneal = 0.7;
+anneal = 0.9;           % ogni 'anneal_step' riduco il LR
 anneal_step = 1000;
 
-B = 100;                % mini-batch size
-T = 2000;               % total mini-batch iterations
+B = 150;                % mini-batch size
+T = 100000;               % total mini-batch iterations
 
 % competition mode: 'divisive' or 'lateral'
 comp_mode = 'divisive';
 
 % divisive competition params
-alpha = 0.3;        % ridotto da 0.6
-sigma_div = 0.5;    % aumentato da 1e-2
+alpha = 0.7;        % ridotto da 0.6
+sigma_div = 8e-2;    % aumentato da 1e-2
 % alpha = 0.6;
 % sigma_div = 1e-2;
 
@@ -57,8 +57,8 @@ W_initial = W;
 
 %% -------------------- GENERATE TRAINING DATA (reuse your code) --------------------
 fprintf('Generating training data...\n');
-vel_vals = linspace(param.pref_vel(1),param.pref_vel(end),32);  
-dir_vals = linspace(0,pi,21)';%2*pi*rand(N,1);
+vel_vals = linspace(param.pref_vel(1),param.pref_vel(end),42);  
+dir_vals = linspace(0,pi,31)';%2*pi*rand(N,1);
 dir_vals(end) = [];
 
 [VV, DD] = meshgrid(vel_vals, dir_vals);
@@ -89,42 +89,46 @@ winner_counts = zeros(n_neurons,1);
 weight_change_trace = zeros(T,1);
 
 for t = 1:T
-    % sample a random mini-batch of indices (with replacement)
-    idx = randsample(n_train, B);
-    Xb = activities_all(:, idx);    % N x B
+% sample and batch-normalize (per-channel)
+idx = randsample(n_train, B);
+Xb = activities_all(:, idx);    % N x B
+mu = mean(Xb,2); sd = std(Xb,0,2) + 1e-8;
+Xb = (Xb - mu) ./ sd;           % centered & scaled
 
-    % z-score per channel on the batch (stabilizes Oja, allows ± weights)
-    mu = mean(Xb,2); sd = std(Xb,0,2) + 1e-8;
-    Xb = (Xb - mu) ./ sd;
-    
-    % MT outputs (before rectification): Y = W' * Xb  -> M x B
-    Y = W' * Xb;
-    Y = max(Y, 0);  % ReLU-like rectification (energy)
+% linear projection (we still compute it)
+Y_lin = W' * Xb;                % M x B
 
-    % competition
-    switch comp_mode
-        case 'divisive'
-            denom = sigma_div + alpha * sum(Y, 1);   % 1 x B
-            Yc = Y ./ denom;                         % M x B
-        case 'lateral'
-            Yc = Y - gamma * (C * Y);                % M x B
-            Yc = max(Yc, 0);
-        otherwise
-            error('Unknown comp_mode');
-    end
+% rectified firing
+Y = max(Y_lin, 0);              % M x B
 
-    % track winners (for diagnostics)
-    [~, winners] = max(Yc, [], 1);
-    for ii = 1:B, winner_counts(winners(ii)) = winner_counts(winners(ii)) + 1; end
+% competition -> post-competition firing Yc (nonnegative)
+switch comp_mode
+    case 'divisive'
+        denom = sigma_div + alpha * sum(Y, 1);   % 1 x B
+        Yc = Y ./ denom;                         % M x B
+    case 'lateral'
+        Yc = Y - gamma * (C * Y);
+        Yc = max(Yc, 0);
+    otherwise
+        error('Unknown comp_mode');
+end
 
-    % Oja batch update: dW = (X * Yc')/B - W .* (ones(N,1) * m2)
-    m2 = mean(Yc.^2, 2)';                          % 1 x M
-    dW = (Xb * Yc')/B - W .* (ones(n_components, 1) * m2);
-    W_old = W;
-    W = W + eta * dW;
+% center Yc across the batch to remove DC bias (gives signed signal)
+Yc_mean = mean(Yc, 2);          % M x 1
+Yc_center = Yc - Yc_mean;       % M x B
 
-    % renormalize columns
-    W = normalize_cols(W);
+% winner counts still from Yc if you want (non-centered)
+[~, winners] = max(Yc, [], 1);
+for ii = 1:B, winner_counts(winners(ii)) = winner_counts(winners(ii)) + 1; end
+
+% Oja update using centered Yc (both Hebbian and stabilizer use Yc_center)
+m2 = mean(Yc_center.^2, 2);     % M x 1
+dW = (Xb * Yc_center') / B - W .* (ones(size(W,1),1) * m2');  % N x M
+W_old = W;
+W = W + eta * dW;
+
+% normalize columns
+W = normalize_cols(W);
 
     % stats
     weight_change_trace(t) = norm(W - W_old, 'fro') / (n_comp_val(W)+eps);
@@ -150,8 +154,11 @@ fprintf('Active neurons after Oja training: %d/%d (%.1f%%)\n', active_neurons, n
 fprintf('Total weight change (Frobenius): %.4f\n', norm(W_final - W_initial, 'fro'));
 
 final_cells = max(W_final' * activities_all, 0);
-figure, popresponse_tiled(permute(reshape(final_cells,5,5,numel(dir_vals),numel(vel_vals)),[3,4,1,2]),vel_vals), title('Learned Weights per MT cell')
-figure, popresponse_tiled_countour(permute(reshape(final_cells,5,5,numel(dir_vals),numel(vel_vals)),[3,4,1,2]),vel_vals), title('Learned Weights per MT cell')
+% figure, popresponse_tiled(permute(reshape(final_cells,5,5,numel(dir_vals),numel(vel_vals)),[3,4,1,2]),vel_vals); title('MT tuning curve');
+figure, popresponse_tiled_countour(permute(reshape(final_cells,8,11,numel(dir_vals),numel(vel_vals)),[3,4,1,2]),vel_vals); title('MT tuning curve');
+% levels = linspace(min(W_final(:)), max(W_final(:)), 10);
+
+figure, popresponse_tiled_countour(permute(reshape(W_final',8,11,n_orient,numel(param.pref_vel)),[3,4,1,2]),param.pref_vel); title('Learned Weight');
 
 %%
 
@@ -178,8 +185,8 @@ xlabel('Component'); ylabel('Neuron');
 
 % Individual neuron tuning (reshape into orient x vel)
 n_vel = length(param.pref_vel);
-for i = 1:min(20, n_neurons)
-    subplot(5, 4, 4+i);
+for i = 1:min(25, n_neurons)
+    subplot(5, 5, i);
     w_2d = reshape(W_final(:, i), [n_orient, n_vel]);
     imagesc(param.pref_vel, 1:n_orient, w_2d);
     colorbar;
@@ -187,7 +194,7 @@ for i = 1:min(20, n_neurons)
     if i > 16, xlabel('Velocity'); end
     if mod(i-1, 4) == 0, ylabel('Orient'); end
 end
-
+figure, plot(weight_change_trace)
 %% compute selectivity index (same metric as before)
 fprintf('\nComputing selectivity indices...\n');
 selectivity = zeros(n_neurons, 1);
@@ -201,8 +208,8 @@ fprintf('Selectivity: min=%.3f, mean=%.3f, max=%.3f\n', min(selectivity), mean(s
 fprintf('Highly selective (>0.4): %d/%d\n', sum(selectivity > 0.4), n_neurons);
 
 %% SAVE
-save_filename = sprintf('hebbian_oja_competitive_%s.mat', datestr(now,'yyyymmdd_HHMMSS'));
-save(save_filename, 'W_final', 'W_initial', 'param', 'winner_counts', 'selectivity');
+save_filename = sprintf('hebbian_oja_competitive_%s.mat', datetime("now"));
+save(save_filename, 'W_final', 'W_initial', 'param', 'winner_counts', 'selectivity','activities_all');
 fprintf('Saved: %s\n', save_filename);
 
 %% -------------------- HELPER FUNCTIONS --------------------

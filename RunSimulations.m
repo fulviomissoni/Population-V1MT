@@ -1,7 +1,7 @@
 %Run simulations 
 
 clear
-close all
+% close all
 clc
 addpath FUNCTIONS
 
@@ -69,7 +69,7 @@ param.filter_sample = filter_sample;
 param.sigma_pool    = sigma_pool;
 % param.num_or_ch_pooled = num_or_ch_pooled;
 
-param.diff_c = linspace(.25,.75,11);
+param.diff_c = linspace(.05,.75,11);
 diff_c = param.diff_c;
 vplaid = 6.4;
 truetheta = deg2rad(30);
@@ -178,7 +178,7 @@ save(namesim,'totsim')
 % Here we wanted to simulate what happen in the real-world. In the
 % real-word usually stimuli are not so sharp in frequency domain but there
 % is some noise (perceptual noise, noise in the background etc..)
-% So, we simulate response to plaid II with some noise on it.
+% So, we simulate response to plaid II witsome noise on it.
 % To obtain the cell response we did the average on different locations
 % So I used a type II plaid of size 6 times the RF of the neuron and take the
 % average 
@@ -219,7 +219,8 @@ for i=1:numel(sigma_orient)
     stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)], ...
         vplaid,diff_c(:),k0,filter_sample,0 ...
         ,'type',"plaid_noise", ...
-        'sigma_noise',.25,'disp',0);
+        'sigma_noise',.05,'disp',1);
+    
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
     % stim.disp = 0;
