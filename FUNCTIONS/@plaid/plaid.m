@@ -28,4 +28,4 @@ p.mode = arg.mode;
 p.k_gauss = arg.k_gauss;
 p.disp = arg.disp;
 % from structure to class...
-p = class(p,'plaid');
+% p = class(p,'plaid');

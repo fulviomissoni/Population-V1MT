@@ -14,16 +14,16 @@ function II = generate_plaid(pld)
     for j=1:size(pld.vgrat,1)
         II = simulate(pld);
     %         set(gcf,'Name','test','pos',[1 620 200 200])
-        % if pld.disp
-        %     figure
-        %     set(gcf,'color','k')
-        %     set(gca,'vis','off')
-        %     for i=1:pld.dur 
-        %         imagesc(II(:,:,i))
-        %         view(0,-90)
-        %         pause(0.05)
-        %     end
-        % end
+        if pld.disp
+            figure
+            set(gcf,'color','k')
+            set(gca,'vis','off')
+            for i=1:pld.dur 
+                imagesc(II(:,:,i))
+                view(0,-90)
+                pause(0.05)
+            end
+        end
     end
 end
 
@@ -39,53 +39,62 @@ end
         
 function II = analytic_express(pl)
     
-% From plaid to grating movements
-%     vtrue = pl.vpld*[cos(pl.truetheta); sin(pl.truetheta)]; %pixels/frame  this is true plaid velocity
-%     m1 = C1*vtrue;   % degs/s  this is grating 1 velocity
-%     m1n = sqrt(sum(m1.^2));
-% 
-%     m2 = C2*vtrue;   % degs/s  this is grating 2 velocity
-%     m2n = sqrt(sum(m2.^2));
-% 
-%     omega1 = 2*pi*m1n; 
-%     omega2 = 2*pi*m2n;
-    [xx,yy]=meshgrid([-pl.apert_rad:pl.apert_rad],...
-                     [-pl.apert_rad:pl.apert_rad]);
-    % ap_mask = xx.^2+yy.^2>pl.apert_rad.^2;
-
-    [C1,R1,C1S]=grating_geometry(pl.theta_g(1));
-    [C2,R2,C2S]=grating_geometry(pl.theta_g(2));
-
-    xxr1 = R1*[xx(:)';yy(:)'];
-    xxr2 = R2*[xx(:)';yy(:)'];
-
-    %blur level
+    % Create spatial grid
+    [xx,yy] = meshgrid([-pl.apert_rad:pl.apert_rad], ...
+                       [-pl.apert_rad:pl.apert_rad]);
+    
+    % Rotation matrices for each grating orientation
+    [C1, R1, C1S] = grating_geometry(pl.theta_g(1));
+    [C2, R2, C2S] = grating_geometry(pl.theta_g(2));
+    
+    % Rotate coordinates
+    xxr1 = R1 * [xx(:)'; yy(:)'];
+    xxr2 = R2 * [xx(:)'; yy(:)'];
+    
+    % Blur level
     k_gauss = pl.k_gauss;
-
-
-% simulates plaid movements
+    
+    % Get contrasts (should be in [0,1])
     c1 = pl.c(1);
     c2 = pl.c(2);
-    i=1;
-    for t=0:pl.dur
-        pR1 = c1*(1+sign(cos(2*pi*pl.k(1)*xxr1(1,:)-(2*pi*pl.vgrat(1)*pl.k(1))*t)));
-
-        pR2 = c2*(1+sign(cos(2*pi*pl.k(2)*xxr2(1,:)-(2*pi*pl.vgrat(2)*pl.k(2))*t)));
-
-        pRe = reshape((pR1.*pl.alpha+(1-pl.alpha).*pR2),length(xx),length(yy));
-        if ~(k_gauss == 0)
-            pRe = imfilter( ...
-                pRe, ...
-                fspecial('gaussian', ...
-                ceil(1/(k_gauss*pl.k(1))), ...
-                1/(k_gauss*pl.k(1))));
+    
+    % Mean luminance
+    mean_lum = 0.5;
+    
+    % Simulate plaid movement
+    II = zeros(length(xx), length(yy), pl.dur+1);
+    
+    for t = 0:pl.dur
+        % OPTION 1: Sine wave gratings (smooth, more realistic)
+        grat1 = mean_lum + c1/2 * sin(2*pi*pl.k(1)*xxr1(1,:) - (2*pi*pl.vgrat(1)*pl.k(1))*t);
+        grat2 = mean_lum + c2/2 * sin(2*pi*pl.k(2)*xxr2(1,:) - (2*pi*pl.vgrat(2)*pl.k(2))*t);
+        
+        % OPTION 2: Square wave gratings (what you had)
+        % grat1 = mean_lum + c1/2 * sign(cos(2*pi*pl.k(1)*xxr1(1,:) - (2*pi*pl.vgrat(1)*pl.k(1))*t));
+        % grat2 = mean_lum + c2/2 * sign(cos(2*pi*pl.k(2)*xxr2(1,:) - (2*pi*pl.vgrat(2)*pl.k(2))*t));
+        
+        % Reshape to 2D
+        grat1 = reshape(grat1, length(xx), length(yy));
+        grat2 = reshape(grat2, length(xx), length(yy));
+        
+        % Combine gratings using alpha blending
+        % Alpha = 0.5 means equal contribution
+        pRe = pl.alpha * grat1 + (1 - pl.alpha) * grat2;
+        
+        % Alternative: Max or additive combination (for transparent plaids)
+        % pRe = max(grat1, grat2);  % Maximum
+        % pRe = (grat1 - mean_lum) + (grat2 - mean_lum) + mean_lum;  % Additive
+        
+        % Apply Gaussian blur if needed
+        if k_gauss ~= 0
+            pRe = imgaussfilt(pRe, 1/(k_gauss*pl.k(1)));
         end
-
-        % pRe(ap_mask) = ceil(mean([c1,c2]));
-
-        i=i+1;
-        II(:,:,i) = pRe;
+        
+        II(:,:,t+1) = pRe;
     end
+    
+    % Ensure output is in [0, 1]
+    II = max(0, min(1, II));
 end
 
 function [pRe,g1_rot,g2_rot]= im_rotate_mode(pl)

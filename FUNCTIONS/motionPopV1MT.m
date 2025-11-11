@@ -46,7 +46,7 @@ switch type
             % arg.k_gauss = stim.k_gauss;                 %with k you can determine the size of the filter that will blur the image
             %                                             %size = 1 / (k_gauss * k0)
             %define plaid object
-            II{num_pld} = plaid(stim(num_pld));
+            II{num_pld} = generate_plaid(stim(num_pld));
             %generate plaid stimulus
         end
     case 'RDS_moving'         
@@ -98,7 +98,7 @@ switch type
         % version with noise on plaid
         for num_stim = 1:length(stim)
             %define plaid object
-            II_plaid{num_stim} = plaid(stim(num_stim));
+            % II_plaid{num_stim} = plaid(stim(num_stim));
             %generate plaid stimulus
             I_plaid{num_stim} = generate_plaid(II_plaid{num_stim});
 
@@ -153,13 +153,13 @@ for i=1:size(II,1)
         
         disp([i j])
         %select input
-        if isa(II{i,j},'plaid')
-            tmp = generate_plaid(II{i,j});
-%             tmp = tmp(180:end-180,180:end-180,:);
-            I = tmp;
-        else
+%         if isa(II{i,j},'plaid')
+%             tmp = generate_plaid(II{i,j});
+% %             tmp = tmp(180:end-180,180:end-180,:);
+%             I = tmp;
+%         else
             I = II{i,j};
-        end
+        % end
         %population processing
         EC1 = popFlowV1MT(I,param);
         sze = size(EC1{1});

@@ -69,7 +69,7 @@ param.filter_sample = filter_sample;
 param.sigma_pool    = sigma_pool;
 % param.num_or_ch_pooled = num_or_ch_pooled;
 
-param.diff_c = linspace(.05,.75,11);
+param.diff_c = linspace(.005,.95,11);
 diff_c = param.diff_c;
 vplaid = 6.4;
 truetheta = deg2rad(30);
