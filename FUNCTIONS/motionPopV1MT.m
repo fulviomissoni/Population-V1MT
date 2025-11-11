@@ -100,7 +100,7 @@ switch type
             %define plaid object
             % II_plaid{num_stim} = plaid(stim(num_stim));
             %generate plaid stimulus
-            I_plaid{num_stim} = generate_plaid(II_plaid{num_stim});
+            I_plaid{num_stim} = generate_plaid(stim(num_stim));
 
             %RDS_moving
             % scale_ind = 4; %do not remember what scale means, it should be related to different scales of the image from same size to bigger ones
@@ -113,12 +113,12 @@ switch type
             I_RDS_plaid{num_stim} = movingRDS_MS(size(I_plaid{num_stim},1),size(I_plaid{num_stim},2), ...
                 size(I_plaid{num_stim},3),scale_ind,vx_plaid, vy_plaid).*stim(num_stim).sigma_noise;
             % II{num_stim} = II{num_stim}(60:end-60,60:end-60,:);
-            II{num_stim} = I_plaid{num_stim} + I_RDS_plaid{num_stim}*abs(1-diff(stim(num_stim).contrast));
+            II{num_stim} = I_plaid{num_stim} + I_RDS_plaid{num_stim}*abs(1-diff(stim(num_stim).c));
 
             II{num_stim} = (II{num_stim} - min(min(II{num_stim})))./ ...
                 (max(max(II{num_stim})) - min(min(II{num_stim})));
             if stim(num_stim).disp
-                dispPlaid(II{num_stim},II_plaid{num_stim})
+                dispPlaid(II{num_stim})
             end
         end
 end
