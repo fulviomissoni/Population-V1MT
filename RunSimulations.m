@@ -38,10 +38,15 @@ filter_sample = 43;
 ft_choice = 'gabor'; % 'gabor'; 'exp_decay'; 'adelson_bergen'
 %PREFERRED VELOCITY
 % v = 0;   
-v  = linspace(-1,1,11)*round(1/2*1/k0);    %why? because max velocity is dependent on k0
+v  = linspace(-1,1,25)*round(1/2*1/k0);    %why? because max velocity is dependent on k0
                                            %v = fsample/k0, fsample is 1pix
                                            %or 1 frame so the nyquist is
                                            %1/2
+% m  = logspace(-3,0,ceil(11/2));
+% m = m / m(end);
+% 
+% v = [-fliplr(m(2:end)), 0, m(2:end)]*round(1/2*1/k0);
+
 % kk = [-3 -1.5  0.5  1.5 3]; %Preferred velocity with Adelson_Bergen
 
 %NORMALIZATION VALUES
@@ -57,28 +62,29 @@ sigma_pool = 3;
 %ceil(n_orient/2), where tuk = tukeywin(n_orient,r), where r = alpha =
 %1:-1:0;
 
-%Organize the input parameters for the functions
-param.spat_freq     = k0;               
-param.n_orient      = n_orient;       
-param.pref_vel      = v;              
-param.temp_filt     = ft_choice;      
-param.spatial_filt  = filter_file;    
-param.samples       = samples;        
+% Organize the input parameters for the functions
+param.spat_freq     = k0;
+param.n_orient      = n_orient;
+param.pref_vel      = v;
+param.temp_filt     = ft_choice;
+param.spatial_filt  = filter_file;
+param.samples       = samples;
 param.filter_sample = filter_sample;
-% param.norm_param    = alpha;  
 param.sigma_pool    = sigma_pool;
-% param.num_or_ch_pooled = num_or_ch_pooled;
 
-param.diff_c = linspace(.005,.95,11);
-diff_c = param.diff_c;
-vplaid = 6.4;
-truetheta = deg2rad(30);
-theta_grat1 = truetheta + deg2rad(30);
-theta_grat2 = truetheta + deg2rad(linspace(-45,80,4));
-% theta_grat2 = truetheta + deg2rad(70);
-[tgrat(:,1), tgrat(:,2)] = meshgrid(theta_grat1,theta_grat2);
-% vgrat = reshape(vgrat,[],2);
+% Use alpha to control grating visibility (contrast balance)
+param.alpha = linspace(0.5, 0.0005, 11);  % Alpha from nearly 0 to 0.5 (equal)
+% param.alpha = 0.45;
+alpha_vals = param.alpha;
 
+vplaid = 5.2;
+truetheta = deg2rad(45);
+theta_grat1 = truetheta + deg2rad(22.5);
+theta_grat2 = truetheta + deg2rad([-22.5, 45, 67.5]);
+[tgrat(:,1), tgrat(:,2)] = meshgrid(theta_grat1, theta_grat2);
+
+% Fixed equal contrasts for both gratings
+fixed_contrast = 0.35;  % Both gratings at 50% contrast
 
 dt = datetime('now');
 str = char(dt, 'yyyyMMdd_HHmmss');  % Example: "20230603_153045"
@@ -106,7 +112,8 @@ alpha1 = 1e-17;
 param.norm_param = [alpha1, alpha2];
 %orientation pooling is managed by an exponential rule
 x = linspace(1,n_orient,100);
-sigma_orient = [.25, 1, 10];
+sigma_orient = [10, 1, .25];
+% sigma_orient = 10;
 x_8 = round(linspace(1,100,n_orient));
 % for ii = 1:numel(sigma_orient)
 %     % figure,
@@ -137,7 +144,9 @@ for i = 1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
 
-    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)],vplaid,diff_c(:),k0,filter_sample,0,'disp',0);
+    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)],vplaid, ...
+        0.5,k0,filter_sample*1.5,0, ...
+        alpha_vals(:),'disp',0);
     
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
@@ -191,7 +200,7 @@ alpha2 = 1;
 alpha1 = 1;
 param.norm_param = [alpha1, alpha2];
 x = linspace(1,n_orient,100);
-sigma_orient = [.25, 1, 10];
+sigma_orient = [10,1,.25];
 x_8 = round(linspace(1,100,n_orient));
 % alpha2 = linspace(0,1,11);
 % alpha1 = [1,zeros(1,10)];
@@ -219,7 +228,7 @@ for i=1:numel(sigma_orient)
     stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)], ...
         vplaid,diff_c(:),k0,filter_sample,0 ...
         ,'type',"plaid_noise", ...
-        'sigma_noise',.05,'disp',0);
+        'sigma_noise',.05,'disp',1);
     
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)

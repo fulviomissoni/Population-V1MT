@@ -9,7 +9,7 @@ function varargout = popresponse_tiled_countour(e, prefval, varargin)
     
     p = inputParser;
     addParameter(p, 'Titles', repmat({""}, sze(3), sze(4)), @(x) iscell(x) && all(size(x) == [sze(3), sze(4)]));
-    addParameter(p, 'nLevels', 10, @isnumeric);
+    addParameter(p, 'nLevels', 20, @isnumeric);
     addParameter(p, 'Levels', [0,max(e,[],'all')]);
 
     parse(p, varargin{:});
@@ -58,7 +58,7 @@ function varargout = popresponse_tiled_countour(e, prefval, varargin)
             contourf(Xout, Yout, Iout, levels,'EdgeColor','none');
             axis equal tight off;
             colormap(jet);
-            
+            % view(0,-90)
             % Aggiungi griglia polare
             % hold on
             % plot(X(:,[1 end])', Y(:,[1 end])', '--', 'LineWidth', 0.1, 'Color', [0.5,0.5,0.5])

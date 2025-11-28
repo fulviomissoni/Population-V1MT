@@ -1,12 +1,12 @@
-function stim = initPlaidStimulus(truetheta, theta, vpld, contr, k, samples, k_gauss, varargin)
+function stim = initPlaidStimulus(truetheta, theta, vpld, contr, k, samples, k_gauss, alpha, varargin)
 % INITPLAIDSTIMULUS
 % Generates a struct array of plaid stimulus definitions
 %
 % OUTPUT struct fields (per stim):
 %   type
 %   truetheta
-%   theta_g           (2×1 orientations)
-%   contrast          (2×1 contrasts for gratings)
+%   theta_g           (2×1 motion directions)
+%   c                 (2×1 contrasts for gratings)
 %   vpld              (scalar plaid speed)
 %   vgrat             (2×1 projected grating velocities)
 %   dur               
@@ -15,7 +15,7 @@ function stim = initPlaidStimulus(truetheta, theta, vpld, contr, k, samples, k_g
 %   k                 (2×1 spatial frequencies)
 %   apert_rad
 %   k_gauss
-%   alpha
+%   alpha             (blending factor)
 %   sigma_noise
 %
 % After this, you can call:
@@ -27,27 +27,29 @@ function stim = initPlaidStimulus(truetheta, theta, vpld, contr, k, samples, k_g
     p = inputParser;
     addParameter(p, 'disp', 0, @(x) isscalar(x) && (x == 0 || x == 1));
     addParameter(p, 'type', "plaid", @(x) ischar(x) || isstring(x));
-    addParameter(p, 'alpha', 0.5, @(x) isscalar(x));
     addParameter(p, 'sigma_noise', 0, @(x) isscalar(x));
     parse(p, varargin{:});
     opt_disp     = p.Results.disp;
     type         = p.Results.type;
-    alpha        = p.Results.alpha;
     sigma_noise  = p.Results.sigma_noise;
     
     % ---------------------------------------------------------------
     % Standardize contrast input → 2-component vector per stimulus
     % ---------------------------------------------------------------
     if size(contr, 2) < 2
-        % Single column or scalar: expand to 2 columns
-        % Make symmetric contrasts: one lower, one higher
+        % Single column or scalar: make both gratings same contrast
         mean_contrast = 0.5;
         
         % Reshape to column vector if needed
         contr = contr(:);
         
-        % Create two columns: [low_contrast, high_contrast]
-        c = [mean_contrast - contr/2, mean_contrast + contr/2];
+        % If scalar, make both gratings equal contrast
+        if isscalar(contr)
+            c = [contr, contr];
+        else
+            % For each value, create equal contrast pair
+            c = repmat(contr, 1, 2);
+        end
         
         % Clamp to valid range [0, 1]
         c = max(0, min(1, c));
@@ -61,6 +63,12 @@ function stim = initPlaidStimulus(truetheta, theta, vpld, contr, k, samples, k_g
         warning('Contrast values outside [0,1] range. Clamping...');
         c = max(0, min(1, c));
     end
+    
+    % ---------------------------------------------------------------
+    % Standardize alpha input (will be gridded like contrast was)
+    % ---------------------------------------------------------------
+    alpha = alpha(:);  % Ensure column vector
+    
     % ---------------------------------------------------------------
     % Standardize spatial frequency → 2-component vector
     % ---------------------------------------------------------------
@@ -70,29 +78,32 @@ function stim = initPlaidStimulus(truetheta, theta, vpld, contr, k, samples, k_g
         k0 = k;
     end
 
-
     % ---------------------------------------------------------------
     % Build all stimulus combinations
     % truetheta   : plaid direction
-    % theta(:,1)  : g1 orientation
-    % theta(:,2)  : g2 orientation
+    % theta(:,1)  : g1 motion direction
+    % theta(:,2)  : g2 motion direction
     % vpld        : plaid motion speed
     % c(:,1/2)    : contrast pairs
+    % alpha       : blending factor (replaces old contrast variation)
     % ---------------------------------------------------------------
 
-    % grid #1: grating1 properties
-    [~, y1, ~, c1] = ndgrid(truetheta, theta(:,1), vpld, c(:,1));
-    y1  = pagetranspose(y1);   y1  = y1(:);
-    c1  = pagetranspose(c1);   c1  = c1(:);
+    % Grid with alpha instead of contrast variation
+    % grid #1: grating1 properties + alpha
+    [~, y1, ~, c1, alpha1] = ndgrid(truetheta, theta(:,1), vpld, c(:,1), alpha);
+    y1     = pagetranspose(y1);     y1     = y1(:);
+    c1     = pagetranspose(c1);     c1     = c1(:);
+    alpha1 = pagetranspose(alpha1); alpha1 = alpha1(:);
 
     % grid #2: grating2 properties + truetheta repeated
-    [truetheta_grid, y2, vel_stim, c2] = ndgrid(truetheta, theta(:,2), vpld, c(:,2));
+    [truetheta_grid, y2, vel_stim, c2, alpha2] = ndgrid(truetheta, theta(:,2), vpld, c(:,2), alpha);
     truetheta_vec = pagetranspose(truetheta_grid); 
     truetheta_vec = truetheta_vec(:);
-
-    y2  = pagetranspose(y2);        y2  = y2(:);
-    vel_stim = pagetranspose(vel_stim); vel_stim = vel_stim(:);
-    c2  = pagetranspose(c2);        c2  = c2(:);
+    
+    y2        = pagetranspose(y2);        y2        = y2(:);
+    vel_stim  = pagetranspose(vel_stim);  vel_stim  = vel_stim(:);
+    c2        = pagetranspose(c2);        c2        = c2(:);
+    alpha2    = pagetranspose(alpha2);    alpha2    = alpha2(:);
 
     % ---------------------------------------------------------------
     % Allocate output struct
@@ -107,22 +118,24 @@ function stim = initPlaidStimulus(truetheta, theta, vpld, contr, k, samples, k_g
 
         stim(i).type       = type;
         stim(i).truetheta  = truetheta_vec(i);
-        stim(i).theta_g    = [y1(i), y2(i)];        % grating orientations
-        stim(i).c   = [c1(i), c2(i)];        % grating contrasts
+        stim(i).theta_g    = [y1(i), y2(i)];        % grating motion directions
+        stim(i).c          = [c1(i), c2(i)];        % grating contrasts
 
         % plaid velocity
         stim(i).vpld       = vel_stim(i);
 
         % -----------------------------------------------------------
         % Project plaid velocity onto grating directions → vgrat
+        % theta_g are MOTION DIRECTIONS, so subtract pi/2 to get bar orientation
         % -----------------------------------------------------------
         v_plaid = [stim(i).vpld * cos(stim(i).truetheta);
-           stim(i).vpld * sin(stim(i).truetheta)];
+                   stim(i).vpld * sin(stim(i).truetheta)];
 
         vgrat = zeros(1, 2);
         for j = 1:2
-            % Project onto orientation axis (perpendicular to bars)
-            n_j = [cos(stim(i).theta_g(j)); sin(stim(i).theta_g(j))];
+            % theta_g is motion direction, bars are perpendicular (subtract pi/2)
+            n_j = [cos(stim(i).theta_g(j)); 
+                   sin(stim(i).theta_g(j))];
             vgrat(j) = dot(v_plaid, n_j);
         end
         stim(i).vgrat = round(vgrat, 5);
@@ -138,11 +151,7 @@ function stim = initPlaidStimulus(truetheta, theta, vpld, contr, k, samples, k_g
         stim(i).apert_rad = ceil(samples/2) + 2;
 
         stim(i).k_gauss   = k_gauss;
-        stim(i).alpha     = alpha;
+        stim(i).alpha     = alpha1(i);    % Use gridded alpha value
         stim(i).sigma_noise = sigma_noise;
-
-        % -- NOTE --
-        % make_plaid() is no longer needed;
-        % this struct is already "plaid-ready" for generate_plaid().
     end
 end

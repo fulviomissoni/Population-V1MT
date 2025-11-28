@@ -76,7 +76,7 @@ th = 2e-2;
 
 theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;
 [xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
-tt = tt + pi/2;  % Convert orientation to motion direction (perpendicular)
+% tt = tt + pi/2;  % Convert orientation to motion direction (perpendicular)
 
 tt = tt + pi*(xx<0);
 xx = abs(xx);

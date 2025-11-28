@@ -32,20 +32,7 @@ switch type
         
         for num_pld = 1:length(stim)
             %plaid object
-            % arg.dur = dur;                              %aperture size      [pixs]
-            % arg.apert_rad = ceil(samples/2)+2;          %aperture size      [pixs]
-            % arg.truetheta = stim.truetheta(num_pld);    %true orientation   [rad]
-            % arg.vpld = stim.vel_stim(num_pld);          %velocity amplitude [pixs/frame]
-            % arg.k = [k0,k0];                            %spatial freq       [cycle/pix]
-            % arg.vgrat = stim.vgrat(num_pld,:);          %gratings vel       [pixs/frame]
-            % arg.theta_g = stim.theta_g(num_pld,:);      %gratings orient    [rad]
-            % % arg.alpha = 0.5;                            %alpha channel for transparency
-            % % arg.contrast = stim.contrast_g(num_pld,:);  %Contrast of two gratings
-            % arg.mode = stim.mode;                       %stimulus implementation algorithm
-            % arg.pl_type = pl_type;                      %plaid type
-            % arg.k_gauss = stim.k_gauss;                 %with k you can determine the size of the filter that will blur the image
-            %                                             %size = 1 / (k_gauss * k0)
-            %define plaid object
+fprintf('---Grat move in the orient %2.0d %2.1d and plaid orient %2.0d \n',rad2deg(stim(num_pld).theta_g),rad2deg(stim(num_pld).truetheta))            %define plaid object
             II{num_pld} = generate_plaid(stim(num_pld));
             %generate plaid stimulus
         end
@@ -158,7 +145,8 @@ for i=1:size(II,1)
 % %             tmp = tmp(180:end-180,180:end-180,:);
 %             I = tmp;
 %         else
-            I = II{i,j};
+        I = II{i,j};
+
         % end
         %population processing
         EC1 = popFlowV1MT(I,param);

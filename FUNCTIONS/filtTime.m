@@ -52,17 +52,21 @@ for index=1:n_vel
     if(filtertype==1) %Gabor
         %center the response of the Gabor filter in 0 to make it causal
         t2 = -floor(n_frames/2):floor(n_frames/2);
-        vc=v(index);
-        f0t=vc*k0;
+        vc = v(index);
+        f0t = vc*k0;
         %relative bandwith extension
-        B=k0/3;
+        B = k0/3;
         %sigma value
         sigmat = sqrt(2*log(2)) ./ (2*pi*B);
         pe=exp(-t2.^2/(2*sigmat^2)).*cos(2*pi*f0t.*t2);
         po=exp(-t2.^2/(2*sigmat^2)).*sin(2*pi*f0t.*t2);
         %energy normalization
-        pe=pe*(1/sqrt(trapz(1,abs(pe).^2)));
-        po=po*(1/sqrt(trapz(1,abs(po).^2)));
+        % pe=pe*(1/sqrt(trapz(1,abs(pe).^2)));
+        % po=po*(1/sqrt(trapz(1,abs(po).^2)));
+        % for centered t2 (may be negative): use t2 defined where pe is sampled
+        energy_pe = trapz(t2, (pe.^2));           % numeric integral of squared amplitude
+        pe = pe / sqrt(max(energy_pe, eps));      % avoid divide-by-zero
+        po = po / sqrt(max(trapz(t2, (po.^2)), eps));
         pe(isnan(pe)) = 0;            
         pe(isinf(pe)) = 1;
         po(isnan(po)) = 0;            
@@ -82,8 +86,13 @@ for index=1:n_vel
         pe=exp(-t2/(2*sigmat^2)).*cos(2*pi*f0t.*t2);
         po=exp(-t2/(2*sigmat^2)).*sin(2*pi*f0t.*t2);
         %energy normalization
-        pe=pe*(1/sqrt(trapz(1,abs(pe).^2)));
-        po=po*(1/sqrt(trapz(1,abs(po).^2)));
+        % pe=pe*(1/sqrt(trapz(1,abs(pe).^2)));
+        % po=po*(1/sqrt(trapz(1,abs(po).^2)));
+        % for centered t2 (may be negative): use t2 defined where pe is sampled
+        energy_pe = trapz(t2, (pe.^2));           % numeric integral of squared amplitude
+        pe = pe / sqrt(max(energy_pe, eps));      % avoid divide-by-zero
+        po = po / sqrt(max(trapz(t2, (po.^2)), eps));
+
         pe(isnan(pe)) = 0;            
         pe(isinf(pe)) = 1;
         po(isnan(po)) = 0;            
@@ -112,12 +121,31 @@ for index=1:n_vel
         po(isinf(po)) = 1;
     end
 
+        % in filtTime, inside maps loop replace conv2 calls with conv(...,'same')
     for maps=1:sy*n_orient
-            C(:,:,maps) =  (conv2(squeeze(C_tmp(:,:,maps)),pe,conv_type));
-            S(:,:,maps) =  (conv2(squeeze(S_tmp(:,:,maps)),pe,conv_type));
-            Ct(:,:,maps) =  (conv2(squeeze(C_tmp(:,:,maps)),po,conv_type));
-            St(:,:,maps) =  (conv2(squeeze(S_tmp(:,:,maps)),po,conv_type));
-    end 
+    tmpC = squeeze(C_tmp(:,:,maps));  % size sx x n_frames
+    tmpS = squeeze(S_tmp(:,:,maps));
+    % convolve each row (spatial x) separately along time:
+    for ix = 1:size(tmpC,1)
+        C_row = tmpC(ix,:);
+        S_row = tmpS(ix,:);
+        C_out(ix,:)  = conv(C_row, pe, conv_type);   % or conv(...,'same')
+        S_out(ix,:)  = conv(S_row, pe, conv_type);
+        Ct_out(ix,:) = conv(C_row, po, conv_type);
+        St_out(ix,:) = conv(S_row, po, conv_type);
+    end
+    C(:,:,maps) = C_out;
+    S(:,:,maps) = S_out;
+    Ct(:,:,maps) = Ct_out;
+    St(:,:,maps) = St_out;
+    end
+
+    % for maps=1:sy*n_orient
+    %         C(:,:,maps) =  (convn(squeeze(C_tmp(:,:,maps)),pe,conv_type));
+    %         S(:,:,maps) =  (convn(squeeze(S_tmp(:,:,maps)),pe,conv_type));
+    %         Ct(:,:,maps) =  (convn(squeeze(C_tmp(:,:,maps)),po,conv_type));
+    %         St(:,:,maps) =  (convn(squeeze(S_tmp(:,:,maps)),po,conv_type));
+    % end 
 
     [dumb, c_frames, dumb2]=size(C);
     %resort data organization

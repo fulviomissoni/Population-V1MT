@@ -16,11 +16,12 @@ function II = generate_plaid(pld)
     %         set(gcf,'Name','test','pos',[1 620 200 200])
         if pld.disp
             figure
-            set(gcf,'color','k')
+            % set(gcf,'color','k')
+            colormap("gray")
             set(gca,'vis','off')
             for i=1:pld.dur 
                 imagesc(II(:,:,i))
-                view(0,-90)
+                % view(0,-90)
                 pause(0.05)
             end
         end
@@ -66,12 +67,12 @@ function II = analytic_express(pl)
     
     for t = 0:pl.dur
         % OPTION 1: Sine wave gratings (smooth, more realistic)
-        grat1 = mean_lum + c1/2 * sin(2*pi*pl.k(1)*xxr1(1,:) - (2*pi*pl.vgrat(1)*pl.k(1))*t);
-        grat2 = mean_lum + c2/2 * sin(2*pi*pl.k(2)*xxr2(1,:) - (2*pi*pl.vgrat(2)*pl.k(2))*t);
-        
+        % grat1 = mean_lum + c1/2 * sin(2*pi*pl.k(1)*xxr1(1,:) - (2*pi*pl.vgrat(1)*pl.k(1))*t);
+        % grat2 = mean_lum + c2/2 * sin(2*pi*pl.k(2)*xxr2(1,:) - (2*pi*pl.vgrat(2)*pl.k(2))*t);
+        % 
         % OPTION 2: Square wave gratings (what you had)
-        % grat1 = mean_lum + c1/2 * sign(cos(2*pi*pl.k(1)*xxr1(1,:) - (2*pi*pl.vgrat(1)*pl.k(1))*t));
-        % grat2 = mean_lum + c2/2 * sign(cos(2*pi*pl.k(2)*xxr2(1,:) - (2*pi*pl.vgrat(2)*pl.k(2))*t));
+        grat1 = mean_lum + c1 * (cos(2*pi*pl.k(1)*xxr1(1,:) - (2*pi*pl.vgrat(1)*pl.k(1))*t));
+        grat2 = mean_lum + c2 * (cos(2*pi*pl.k(2)*xxr2(1,:) - (2*pi*pl.vgrat(2)*pl.k(2))*t));
         
         % Reshape to 2D
         grat1 = reshape(grat1, length(xx), length(yy));

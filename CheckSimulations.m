@@ -20,7 +20,7 @@ for numFile = 1:totFile
     param = squeeze(cat(4,totsim{3,:}));
     
     % num_or_ch_pooledTot = unique(cat(1,param.num_or_ch_pooled));
-    num_diff_c = unique(cat(1,param.diff_c));
+    num_diff_c = unique(cat(1,param.alpha));
     norm_param_sigma = cat(1,param.sigma_orient);
     % num_norm = unique(norm_param(:,2));
     
@@ -39,7 +39,7 @@ for numFile = 1:totFile
     TotTestedVGrat = cat(1,stim.vgrat); %in px/sec
     TestedVGrat_1 = unique(TotTestedVGrat(:,1));
     TestedVGrat_2 = unique(TotTestedVGrat(:,2));
-    TotTestedDiff = diff(cat(1,stim.c),[],2); 
+    TotTestedDiff = (cat(1,stim.alpha)); 
     TestedDiff = unique(TotTestedDiff);
     
     TotTestedGrat = reshape(TotTestedGrat, ...
@@ -81,10 +81,10 @@ for numFile = 1:totFile
     %population tested parameters
 
 
-    % plotPlaidVectors(repmat(testedTrueThetaPlaid,numel(TestedGrat_2),1),...
-    %             squeeze(TotTestedGrat(1,:,1,1,:)),...
-    %             repmat(testedVplaid,numel(TestedGrat_2),1), ...
-    %             squeeze(TotTestedVGrat(1,:,1,1,:))) 
+    plotPlaidVectors(repmat(testedTrueThetaPlaid,numel(TestedGrat_2),1),...
+                squeeze(TotTestedGrat(1,:,1,1,:)),...
+                repmat(testedVplaid,numel(TestedGrat_2),1), ...
+                squeeze(TotTestedVGrat(1,:,1,1,:))) 
     %% Look at the data
     
     % figure,
@@ -182,8 +182,8 @@ for numFile = 1:totFile
     
     PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
     
-    figure(6), t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,4,:,3))),[sze_pop(1:2),1,sze_pop(4)]),...
-                        squeeze(PR_decoded(:,:,:,4,:,3,weight_mode))), ...
+    figure(6), t = popresponse_tiled(cat(3,reshape((squeeze(pop_resp_even(:,:,3,:,3))),[sze_pop(1:2),1,sze_pop(4)]),...
+                        squeeze(PR_decoded(:,:,:,3,:,3,weight_mode))), ...
                         param(1).pref_vel); 
     % %Decode Activity with weighted activity
     % for ii = 1:num_cond
@@ -210,13 +210,13 @@ for numFile = 1:totFile
     ori(ori < 0) = ori(ori < 0) + 2*pi;
     
     % Also ensure truetheta is in [0, 2π]
-    true_theta_normalized = stim(1,1).truetheta + pi/2;
+    true_theta_normalized = stim(1,1).truetheta;
     if true_theta_normalized < 0
         true_theta_normalized = true_theta_normalized + 2*pi;
     end
     
     for ii = 1:size(ori,1)
-        figure(ii)
+        figure(ii+1)
         subplot(2,1,1),
         hold on,
         estim = squeeze(ori(ii,:,:,weight_mode));

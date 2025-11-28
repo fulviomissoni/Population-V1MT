@@ -37,7 +37,7 @@ F = filtTime(F,'valid',Ft_choice,v,k0);
 
 for i=1:4
     %reverse position of third and fourth dimension
-    F{i} = permute(F{i},[1 2 4 3 5]);
+    F{i} = permute(F{i},[1 2 4 3 5])./max(F{i},[],'all');
 end
 
 %[nr, nc, n_frame, or, dumb] = size(F{1});
@@ -46,6 +46,9 @@ end
 % This function combines oppurtunely filtered responses to obtain
 % population activity of V1-like cells and motion energy detectors (C1)
 C1 = populationV1MT(F,param);
+
+
+
 
 clear F
 
@@ -85,6 +88,11 @@ S0{3} = -S+Ct;
 S0{4} = St+C;
 clear C S Ct St
 
+S0{1} = S0{1};
+S0{2} = S0{2};
+S0{3} = S0{3};
+S0{4} = S0{4};
+
 % COMPLEX CELLS - FIRST LAYER
 C1{1} = S0{1}.^2 + S0{2}.^2;
 C1{2} = S0{3}.^2 + S0{4}.^2;
@@ -105,7 +113,7 @@ a2 = alpha(2);
 %Memory allocation:
 
 for i = 1:2
-    C1_pooled{i} = C1{i}./max(C1{i});
+    C1_pooled{i} = C1{i}./max(C1{i},[],'all');
     C1_pooled{i} = reshape(C1_pooled{i},sy,sx,n_frames*n_orient*v);
     S = zeros(sy,sx,n_frames*n_orient*v);
     %spatial pooling of normalization pool
@@ -132,11 +140,11 @@ for i = 1:2
     % C1_pooled{i}(S<prctile(S(:),0.25)) = 1e-15;
     % a1 = 0.001*mean(C1_pooled{i},'all');
     % a2 = a1 / mean(S(:));
-    a1 = prctile(S(:),0.025); a2 = 1;
+    a1 = prctile(S(:),2.5); a2 = 1;
     C1{i} = C1_pooled{i}./(a1 + a2*S);
 
     C1{i}(isnan(C1{i})) = 0;
-    C1{i} = squeeze(reshape(C1{i},sze));
+    C1{i} = (squeeze(reshape(C1{i},sze)));
 
 end
 

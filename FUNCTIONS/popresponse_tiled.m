@@ -23,9 +23,9 @@ for i = 1:sze(3)
 for j = 1:sze(4)
 nexttile,
 surfPolar(squeeze(e(:,:,i,j)),0,90,'false',prefval);
-colormap(hot(256))
+colormap(jet(256))
 % axis equal
-
+% view(90,-90)
 title(titlestr(i,j))
 end
 end
