@@ -55,7 +55,7 @@ function varargout = popresponse_tiled_countour(e, prefval, varargin)
             % end
             
             % Contour plot
-            contourf(Xout, Yout, Iout, levels,'EdgeColor','none');
+            contourf(Xout, Yout, Iout, levels);
             axis equal tight off;
             colormap(jet);
             % view(0,-90)

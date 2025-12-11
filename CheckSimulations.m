@@ -3,7 +3,7 @@ close all
 
 addpath FUNCTIONS\
 
-folder2check = "NoNoise";
+folder2check = "Noise";
 
 folder = dir(strcat("SIMULATIONS\PlaidAnalysis\New\",folder2check));
 
@@ -80,11 +80,11 @@ for numFile = 1:totFile
     testedVplaid = unique(stim(1).vpld);
     %population tested parameters
 
-
-    plotPlaidVectors(repmat(testedTrueThetaPlaid,numel(TestedGrat_2),1),...
-                squeeze(TotTestedGrat(1,:,1,1,:)),...
-                repmat(testedVplaid,numel(TestedGrat_2),1), ...
-                squeeze(TotTestedVGrat(1,:,1,1,:))) 
+    % 
+    % plotPlaidVectors(repmat(testedTrueThetaPlaid,numel(TestedGrat_2),1),...
+    %             squeeze(TotTestedGrat(1,:,1,1,:)),...
+    %             repmat(testedVplaid,numel(TestedGrat_2),1), ...
+    %             squeeze(TotTestedVGrat(1,:,1,1,:))) 
     %% Look at the data
     
     % figure,
@@ -105,7 +105,7 @@ for numFile = 1:totFile
     %Get the different weighting models and repeated for each tested values
     W = permute( ...
         repmat( ...
-        weightingfunctions(xx,tt), ...
+        weightingfunctions_general(xx,tt), ...
         1,1,1,prod(sze_reshaped(4:5)),sze_reshaped(6),sze_reshaped(7)), ...
         [1,2,4,5,6,3]);  
     
@@ -181,10 +181,17 @@ for numFile = 1:totFile
     end
     
     PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
-    
-    figure(6), t = popresponse_tiled(cat(3,reshape((squeeze(pop_resp_even(:,:,3,:,3))),[sze_pop(1:2),1,sze_pop(4)]),...
-                        squeeze(PR_decoded(:,:,:,3,:,3,weight_mode))), ...
-                        param(1).pref_vel); 
+    if numFile == 1
+        for numstim = 1:size(e_2,3)
+            for normparam = 1:size(e_2,5)
+                figure(50 + numstim + (normparam - 1)*size(e_2,3)), t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,numstim,:,normparam))),[sze_pop(1:2),1,sze_pop(4)]),...
+                                    reshape((squeeze(pop_resp_even(:,:,numstim,:,normparam,weight_mode))),[sze_pop(1:2),1,sze_pop(4)]),...
+                                    squeeze(PR_decoded(:,:,:,numstim,:,normparam,weight_mode))), ...
+                                    param(1).pref_vel); 
+                title(t,['PopActivity to stim ', num2str(numstim),' normalisation sigma ',num2str(norm_param_sigma(normparam))])
+            end
+        end
+    end
     % %Decode Activity with weighted activity
     % for ii = 1:num_cond
     %     [vx(ii),vy(ii)] = decodingCM(squeeze(pop_resp_even(:,:,ii)),param(1));
@@ -192,16 +199,16 @@ for numFile = 1:totFile
     % title(t,'Population Activity Decoded (rows are different Iteration, col are contrast)')
     vx = reshape(vx,sze_pop(3:end));
     vy = reshape(vy,sze_pop(3:end));
-    gradientMap = jet(numel(norm_param_sigma));
+    gradientMap = lines(numel(norm_param_sigma));
     
     n_orient = 8;    
     x = linspace(1,n_orient,100);
     x_8 = round(linspace(1,100,n_orient));
     
-    % figure(2),
-    % w_o = exp(-(x(x_8(3))-(1:n_orient)).^2./(2.*norm_param_sigma.^2));
-    % plot(w_o'),colororder(gradientMap), legend(string(norm_param_sigma)),
-    % title('Tested Orientation Pooling (sample for one neuron)')
+    figure(70),
+    w_o = exp(-(x(x_8(3))-(1:n_orient)).^2./(2.*norm_param_sigma.^2));
+    plot(w_o'),colororder(gradientMap), legend(string(norm_param_sigma)),
+    title('Tested Orientation Pooling (sample for one neuron)')
     
     v = sqrt(vx.^2 + vy.^2);
     ori = atan2(vy,vx);
@@ -216,8 +223,9 @@ for numFile = 1:totFile
     end
     
     for ii = 1:size(ori,1)
-        figure(ii+1)
-        subplot(2,1,1),
+        figure(60),
+        nexttile(ii),
+        % subplot(2,1,1),
         hold on,
         estim = squeeze(ori(ii,:,:,weight_mode));
         true = repmat(true_theta_normalized, size(estim,1), size(estim,2));
@@ -225,12 +233,15 @@ for numFile = 1:totFile
         % Use angdiff for circular angular differences
         ang_error = abs(rad2deg(angdiff(estim, true)));
         
-        scatter(TestedDiff, ang_error, 'filled', ...
-            'MarkerFaceAlpha', 0.4, 'MarkerEdgeColor', 'none', 'Color', gradientMap);
-        plot(TestedDiff, ang_error); 
+        scatter(TestedDiff, ang_error, ...
+            'Color', gradientMap,'LineWidth',0.7,'MarkerEdgeAlpha',0.7);
+        p = plot(TestedDiff, ang_error, 'LineStyle','-.');
+        for pp = 1:numel(p)
+            p(pp).Color(4) = 0.7;
+        end
         legend(string(norm_param_sigma))
         colororder(gradientMap)
-        % ylim([0,150]), 
+        ylim([0,70]), 
         grid on
         title('angle error')
         ylabel("[deg]"), xlabel("[delta-contrast]")
@@ -238,17 +249,17 @@ for numFile = 1:totFile
         % velocity
         estim = squeeze(v(ii,:,:,weight_mode));
         true = repmat(stim(1,1).vpld, size(estim,1), size(estim,2));
-        subplot(2,1,2),
-        hold on,
-        scatter(TestedDiff, abs(true-estim), 'filled', ...
-            'MarkerFaceAlpha', 0.4, 'MarkerEdgeColor', 'none', 'Color', gradientMap);
-        plot(TestedDiff, abs(true-estim)); 
-        legend(string(norm_param_sigma))
-        colororder(gradientMap)
-        title('velocity error'),
-        grid on, 
-        % ylim([0,1.7])
-        ylabel("[pix/frames]"), xlabel("[delta-contrast]")
+        % subplot(2,1,2),
+        % hold on,
+        % scatter(TestedDiff, abs(true-estim), 'filled', ...
+        %     'MarkerFaceAlpha', 0.4, 'MarkerEdgeColor', 'none', 'Color', gradientMap);
+        % plot(TestedDiff, abs(true-estim)); 
+        % legend(string(norm_param_sigma))
+        % colororder(gradientMap)
+        % title('velocity error'),
+        % grid on, 
+        % ylim([0,5])
+        % ylabel("[pix/frames]"), xlabel("[delta-contrast]")
     end
     % %% Debug function
     % % How to Choose Parameters Systematically:

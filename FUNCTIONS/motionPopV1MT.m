@@ -32,7 +32,7 @@ switch type
         
         for num_pld = 1:length(stim)
             %plaid object
-fprintf('---Grat move in the orient %2.0d %2.1d and plaid orient %2.0d \n',rad2deg(stim(num_pld).theta_g),rad2deg(stim(num_pld).truetheta))            %define plaid object
+            fprintf('---Grat move in the orient %2.0d %2.1d and plaid orient %2.0d \n',rad2deg(stim(num_pld).theta_g),rad2deg(stim(num_pld).truetheta))            %define plaid object
             II{num_pld} = generate_plaid(stim(num_pld));
             %generate plaid stimulus
         end
@@ -100,7 +100,7 @@ fprintf('---Grat move in the orient %2.0d %2.1d and plaid orient %2.0d \n',rad2d
             I_RDS_plaid{num_stim} = movingRDS_MS(size(I_plaid{num_stim},1),size(I_plaid{num_stim},2), ...
                 size(I_plaid{num_stim},3),scale_ind,vx_plaid, vy_plaid).*stim(num_stim).sigma_noise;
             % II{num_stim} = II{num_stim}(60:end-60,60:end-60,:);
-            II{num_stim} = I_plaid{num_stim} + I_RDS_plaid{num_stim}*abs(1-diff(stim(num_stim).c));
+            II{num_stim} = I_plaid{num_stim} + I_RDS_plaid{num_stim}*stim(num_stim).alpha;
 
             II{num_stim} = (II{num_stim} - min(min(II{num_stim})))./ ...
                 (max(max(II{num_stim})) - min(min(II{num_stim})));

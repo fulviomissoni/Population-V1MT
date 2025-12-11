@@ -7,7 +7,7 @@ function plotPlaidVectors(truetheta_vec, theta_g_mat, vpld_vec, vgrat_mat)
     figure; clf;
     set(gcf, 'color', 'w');
     for i = 1:N
-        subplot(ceil(sqrt(N)), ceil(sqrt(N)), i); hold on; axis equal;
+        subplot(N, 1, i); hold on; axis equal;
         set(gca, 'XAxisLocation','origin','YAxisLocation','origin');
         axis([-1 1 -1 1] * max(vpld_vec)*1.3);
         truetheta = truetheta_vec(i);

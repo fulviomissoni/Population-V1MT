@@ -112,7 +112,7 @@ alpha1 = 1e-17;
 param.norm_param = [alpha1, alpha2];
 %orientation pooling is managed by an exponential rule
 x = linspace(1,n_orient,100);
-sigma_orient = [10, 1, .25];
+sigma_orient = [10, 1, .1];
 % sigma_orient = 10;
 x_8 = round(linspace(1,100,n_orient));
 % for ii = 1:numel(sigma_orient)
@@ -191,7 +191,6 @@ save(namesim,'totsim')
 % To obtain the cell response we did the average on different locations
 % So I used a type II plaid of size 6 times the RF of the neuron and take the
 % average 
-% % % TO DO: EDIT MOTIONV1MT THE PART OF STIMULUS SELECTION
 
 %normalisation parameters
 %Note: I don't work on alpha1 in the normalisation stage (C1/(a1 + a2*pool))
@@ -200,7 +199,7 @@ alpha2 = 1;
 alpha1 = 1;
 param.norm_param = [alpha1, alpha2];
 x = linspace(1,n_orient,100);
-sigma_orient = [10,1,.25];
+sigma_orient = [10,1,.1];
 x_8 = round(linspace(1,100,n_orient));
 % alpha2 = linspace(0,1,11);
 % alpha1 = [1,zeros(1,10)];
@@ -225,11 +224,16 @@ for i=1:numel(sigma_orient)
     tic
 %      diff_c = contr(i); %contrast difference between gratings
     rng(j)
-    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)], ...
-        vplaid,diff_c(:),k0,filter_sample,0 ...
-        ,'type',"plaid_noise", ...
-        'sigma_noise',.05,'disp',1);
+    stim = initPlaidStimulus(truetheta,[tgrat(:,1), tgrat(:,2)],vplaid, ...
+        0.5,k0,filter_sample*1.5,0, ...
+        alpha_vals(:),'disp',0, ...
+        'type',"plaid_noise", ...
+        'sigma_noise',.1);
     
+    % stim(:).type = "plaid";
+    % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
+    % stim.disp = 0;
+    % stim.k_gauss = 0;    
     % stim(:).type = "plaid";
     % stim(:).mode = 1; %implementation mode (see GeneratePlaid)
     % stim.disp = 0;
@@ -239,7 +243,7 @@ for i=1:numel(sigma_orient)
     % param.num_or_ch_pooled = num_or_pool(i);
     w_o = exp(-(x(x_8)-(1:n_orient)').^2./(2.*sigma_orient(i).^2));
 
-    param.orient_weighting = w_o;
+    param.orient_weighting = w_o./sum(w_o(:));
     param.sigma_orient = sigma_orient(i);
 
     % param.norm_param = [a1(i), a2(i)];
@@ -271,7 +275,6 @@ end
 %% POP RESPONSE TO MOVING RDS
 % This is related to the same of step of before (having a broader frequency
 % response) and see what happen to the cells
-% % % % TO DO: I don't remember how I did
 
 
 % Parameters of the simulation

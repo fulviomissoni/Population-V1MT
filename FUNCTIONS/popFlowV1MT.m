@@ -58,9 +58,9 @@ function [C1] = populationV1MT(G,param)
 
 % This function combines oppurtunely filtered responses to obtain
 % population activity of V1-like cells and motion energy detectors (C1)
-alpha = param.norm_param;
+% alpha = param.norm_param;
 sigma_pool = param.sigma_pool;
-num_or_ch_pooled = param.num_or_ch_pooled;
+% num_or_ch_pooled = param.num_or_ch_pooled;
 w_o = param.orient_weighting;
 
 [sy, sx, n_frames, n_orient, v] = size(G{1});
@@ -72,7 +72,7 @@ Ct = G{3}(:);   % REAL LEFT - Temporal Derivative
 St = G{4}(:);   % IMAG LEFT - Temporal Derivative
 
 clear G;
-w_orient = permute(repmat(w_o,sy*sx*n_frames,1,v),[2,3,1]);
+% w_orient = permute(repmat(w_o,sy*sx*n_frames,1,v),[2,3,1]);
 %% ENERGY MODEL
 
 % ALLOCATE MEMORY
@@ -107,8 +107,8 @@ clear S0
 % C1{1} = C1{1}(:)./mean(C1{1}(:));
 % C1{2} = C1{2}(:)./mean(C1{2}(:));
 % NORMALIZATION STAGE OF COMPLEX-CELLS
-a1 = alpha(1);
-a2 = alpha(2);
+% a1 = alpha(1);
+% a2 = alpha(2);
 
 %Memory allocation:
 
