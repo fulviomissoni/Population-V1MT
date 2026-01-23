@@ -3,7 +3,7 @@ close all
 
 addpath FUNCTIONS\
 
-folder2check = "Noise";
+folder2check = "NoNoise";
 
 folder = dir(strcat("SIMULATIONS\PlaidAnalysis\New\",folder2check));
 
@@ -12,7 +12,7 @@ weight_mode = 1;
 
 for numFile = 1:totFile
     load(strcat("SIMULATIONS\PlaidAnalysis\New\",folder2check,"\",folder(numFile+2).name))
-    
+    for seeds = 1:25
     % M = 3e5; %compute from population response to plaid
     % M = max(data,[],"all");
     data = cat(5,totsim{1,:});
@@ -113,13 +113,18 @@ for numFile = 1:totFile
     %I plot what happen if I have the grating contrast level at different ratio
     %(columns) with different normalisation levels (rows)
     %EVEN POPULATION
+    rng(seeds)
     for ii = 1:prod(sze_reshaped(4:5))
+        M = max(squeeze(squeeze(data_reshaped(1,:,:,ii,:,:))),[],"all");
+        n = (rand(size(squeeze(data_reshaped(1,:,:,ii,:,:)))))*M*.025;
+        e_1(:,:,ii,:,:) = squeeze(data_reshaped(1,:,:,ii,:,:)) + n;
+        M = max(squeeze(squeeze(data_reshaped(1,:,:,ii,:,:))),[],"all");
+        n = (rand(size(squeeze(data_reshaped(2,:,:,ii,:,:)))))*M*.025;
+        e_2(:,:,ii,:,:) = squeeze(data_reshaped(2,:,:,ii,:,:)) + n;
         
-        e_1(:,:,ii,:,:) = squeeze(data_reshaped(1,:,:,ii,:,:));
-        e_2(:,:,ii,:,:) = squeeze(data_reshaped(2,:,:,ii,:,:));
     
         w = squeeze(W(:,:,ii,:,:,:));
-        pop_resp_odd(:,:,ii,:,:,:) = getpopresponse(w,e_1(:,:,ii,:,:)); % Apply weighting to the response data
+        pop_resp_odd(:,:,ii,:,:,:) = getpopresponse(w,e_1(:,:,ii,:,:));  % Apply weighting to the response data 
         pop_resp_even(:,:,ii,:,:,:) = getpopresponse(w,e_2(:,:,ii,:,:)); % Apply weighting to the response data
         
         % pop_resp = squeeze(W .* e); 
@@ -156,60 +161,65 @@ for numFile = 1:totFile
     
     % pop_resp = pop_resp_even;
     % If your data grid is, say, 8x11:
-    sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1));
+    sigma_r = (param(1).pref_vel(end) - param(1).pref_vel(end-1))*4/3;
     % sigma_r = 0.5;
-    sigma_t = (pi/8);
-    K = 2;
+    sigma_t = (pi/8)*0.8;
+    K = 4;
     logistic_slope = 2;
     logistic_centre = 0.2;
-    max_iteration = 3;
+    max_iteration = 2;
     
-    
+    pop_resp_even = squeeze(pop_resp_even(:,:,:,:,:,weight_mode));
     sze_pop = size(pop_resp_even);
     num_cond = prod(sze_pop(3:end));
     %Activity Decoding
     for ii = 1:num_cond
-        [PR_decoded(:,:,:,ii),vx(ii),vy(ii)] = DecodeMxHat( ...
-                                    (squeeze(pop_resp_even(:,:,ii))), ...  %Activity
-                                    param(1), ...                                  %Population Parameters
-                                    sigma_r, ...                                %see code
+        [PR_decoded(:,:,:,ii),v_CM(:,ii),v_max(:,ii)] = DecodeMxHat( ...
+                                    (squeeze(pop_resp_even(:,:,ii))) , ...  %Activity
+                                    param(1), ...                                                              %Population Parameters
+                                    sigma_r, ...                                                               %see code
                                     sigma_t, ...
                                     K, ...
                                     max_iteration, ...
                                     logistic_slope, ...
                                     logistic_centre);
     end
-    
+    % [M_decoded, ]  = max(reshape(pop_resp_even,[],num_cond),1);
+   
     PR_decoded = reshape(PR_decoded,[sze_pop(1),sze_pop(2),max_iteration,sze_pop(3:end)]);
-    if numFile == 1
+    
+    %PLOT ACTIVITY AND DECODING
+    if numFile == 1 && seeds == 1
         for numstim = 1:size(e_2,3)
             for normparam = 1:size(e_2,5)
-                figure(50 + numstim + (normparam - 1)*size(e_2,3)), t = popresponse_tiled(cat(3,reshape((squeeze(e_2(:,:,numstim,:,normparam))),[sze_pop(1:2),1,sze_pop(4)]),...
-                                    reshape((squeeze(pop_resp_even(:,:,numstim,:,normparam,weight_mode))),[sze_pop(1:2),1,sze_pop(4)]),...
-                                    squeeze(PR_decoded(:,:,:,numstim,:,normparam,weight_mode))), ...
+                figure(50 + numstim + (normparam - 1)*size(e_2,3)), t = popresponse_tiled(cat(3,...
+                                    reshape((squeeze(e_2(:,:,numstim,:,normparam))),[sze_pop(1:2),1,sze_pop(4)]),...
+                                    reshape((squeeze(pop_resp_even(:,:,numstim,:,normparam))),[sze_pop(1:2),1,sze_pop(4)]),...
+                                    reshape(squeeze(PR_decoded(:,:,:,numstim,:,normparam)),[sze_pop(1:2),max_iteration,sze_pop(4)])), ...
                                     param(1).pref_vel); 
                 title(t,['PopActivity to stim ', num2str(numstim),' normalisation sigma ',num2str(norm_param_sigma(normparam))])
             end
         end
     end
-    % %Decode Activity with weighted activity
-    % for ii = 1:num_cond
-    %     [vx(ii),vy(ii)] = decodingCM(squeeze(pop_resp_even(:,:,ii)),param(1));
-    % end
+
+    %Decode Activity with weighted activity
+    for ii = 1:num_cond
+        [vx(ii),vy(ii)] = decodingCM(squeeze(pop_resp_even(:,:,ii)),param(1));
+    end
     % title(t,'Population Activity Decoded (rows are different Iteration, col are contrast)')
-    vx = reshape(vx,sze_pop(3:end));
-    vy = reshape(vy,sze_pop(3:end));
+    vx = reshape(v_max(1,:),sze_pop(3:end));
+    vy = reshape(v_max(2,:),sze_pop(3:end));
     gradientMap = lines(numel(norm_param_sigma));
     
     n_orient = 8;    
     x = linspace(1,n_orient,100);
     x_8 = round(linspace(1,100,n_orient));
     
-    figure(70),
-    w_o = exp(-(x(x_8(3))-(1:n_orient)).^2./(2.*norm_param_sigma.^2));
-    plot(w_o'),colororder(gradientMap), legend(string(norm_param_sigma)),
-    title('Tested Orientation Pooling (sample for one neuron)')
-    
+    % figure(70),
+    % w_o = exp(-(x(x_8(3))-(1:n_orient)).^2./(2.*norm_param_sigma.^2));
+    % plot(w_o'),colororder(gradientMap), legend(string(norm_param_sigma)),
+    % title('Tested Orientation Pooling (sample for one neuron)')
+    % 
     v = sqrt(vx.^2 + vy.^2);
     ori = atan2(vy,vx);
     
@@ -222,33 +232,34 @@ for numFile = 1:totFile
         true_theta_normalized = true_theta_normalized + 2*pi;
     end
     
-    for ii = 1:size(ori,1)
+    for jj = 1:size(ori,1)
         figure(60),
-        nexttile(ii),
+        nexttile(jj),
         % subplot(2,1,1),
         hold on,
-        estim = squeeze(ori(ii,:,:,weight_mode));
+        estim = squeeze(ori(jj,:,:));
         true = repmat(true_theta_normalized, size(estim,1), size(estim,2));
         
         % Use angdiff for circular angular differences
         ang_error = abs(rad2deg(angdiff(estim, true)));
         
-        scatter(TestedDiff, ang_error, ...
-            'Color', gradientMap,'LineWidth',0.7,'MarkerEdgeAlpha',0.7);
-        p = plot(TestedDiff, ang_error, 'LineStyle','-.');
-        for pp = 1:numel(p)
-            p(pp).Color(4) = 0.7;
-        end
+        scatter(TestedDiff+(rand(length(TestedDiff),1)-.5)*2*.007, ang_error, 15, 'filled', ...
+            'Color', gradientMap,'LineWidth',0.3,'MarkerFaceAlpha',0.15,'MarkerEdgeColor','none');
+        % p = plot(TestedDiff, ang_error, 'LineStyle','-.');
+        % for pp = 1:numel(p)
+        %     p(pp).Color(4) = 0.3;
+        % end
+
         legend(string(norm_param_sigma))
-        colororder(gradientMap)
-        ylim([0,70]), 
+        % colororder(gradientMap)
+        ylim([0,100]),xlim([0,max(TestedDiff)]) 
         grid on
         title('angle error')
         ylabel("[deg]"), xlabel("[delta-contrast]")
-        
-        % velocity
-        estim = squeeze(v(ii,:,:,weight_mode));
-        true = repmat(stim(1,1).vpld, size(estim,1), size(estim,2));
+        tot_ang_error(:,:,jj,seeds) = ang_error;
+        % % velocity
+        % estim = squeeze(v(jj,:,:,weight_mode));
+        % true = repmat(stim(1,1).vpld, size(estim,1), size(estim,2));
         % subplot(2,1,2),
         % hold on,
         % scatter(TestedDiff, abs(true-estim), 'filled', ...
@@ -297,4 +308,33 @@ for numFile = 1:totFile
     % max_iteration = 8;
     % 
     % debugDecodeMxHat(pop_resp(:,:,1,1,1),param(1),sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre);
+    clear pop_resp_even pop_resp_odd pop_resp
+    end
+    figure(60)
+     for jj = 1:size(ori,1)
+        figure(60),
+        nexttile(jj),
+        % subplot(2,1,1),
+        hold on,
+        errorbar(TestedDiff, squeeze(mean(tot_ang_error(:,:,jj,:),4)),squeeze(std(tot_ang_error(:,:,jj,:),[],4)))
+        legend(string(norm_param_sigma))
+        colororder(gradientMap)
+        % colororder(gradientMap)
+     end
 end
+
+% v_est = reshape(v_max,[2,sze_pop(3:end)]);
+% % close all
+% 
+% %visualize estimates
+% for weight_mode = 2
+% for norm = 1
+% figure, 
+% for numstim = 1:3
+% nexttile(numstim),
+% scatter(squeeze(v_est(1,numstim,:,norm,weight_mode)),squeeze(v_est(2,numstim,:,norm,weight_mode)),'filled')
+% xlim([-4,4]), ylim([-4,4]), 
+% grid on
+% end
+% end
+% end

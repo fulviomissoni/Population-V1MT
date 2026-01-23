@@ -1,126 +1,118 @@
-function [pop_resp_V1MT, vx, vy] = DecodeMxHat(pop_resp,param,sigma_r,sigma_t,K,max_iteration,logistic_slope,logistic_centre)
-%DECODEMXHAT Iterative competitive localization of neural population activity
-%
-%   [pop_resp_V1MT, vx, vy] = DECODEMXHAT(pop_resp, param, sigma_r, sigma_t, K, max_iteration, logistic_slope, logistic_centre)
-%   performs iterative competitive localization on neural population responses using
-%   center-surround filtering with recurrent processing and nonlinear transformations.
-%   The algorithm enhances local activity peaks while suppressing diffuse background
-%   responses, then decodes the resulting pattern using population vector decoding.
-%
-%   INPUTS:
-%   pop_resp        - Population response matrix [n_orient x n_vel]
-%                     Neural activity where rows=orientation channels, cols=velocity preferences
-%   param           - Parameter structure with required fields:
-%                     .n_orient: number of orientation channels (integer)
-%                     .pref_vel: preferred velocity values (vector)  
-%   sigma_r         - Velocity dimension spatial scale (positive scalar, typically 0.1-10)
-%                     Controls extent of center-surround filtering in velocity space
-%   sigma_t         - Orientation dimension spatial scale (positive scalar, typically 0.1-π/2)  
-%                     Controls extent of center-surround filtering in orientation space
-%   K               - Inhibition scale factor (scalar > 1, typically 1.5-5)
-%                     Ratio of inhibitory to excitatory spatial spread
-%                     K=1.5: strong lateral inhibition; K>3: gentle inhibition
-%   max_iteration   - Maximum number of recurrent iterations (integer, typically 5-15)
-%                     More iterations = stronger localization and noise suppression
-%   logistic_slope  - Logistic function steepness (positive scalar, typically 1-20)
-%                     Controls aggressiveness of contrast enhancement  
-%   logistic_centre - Logistic function threshold (scalar 0-1, typically 0.1-0.5)
-%                     Threshold level as fraction of maximum response
-%
-%   OUTPUTS:
-%   pop_resp_V1MT   - Processed population response [n_orient x n_vel x max_iteration]
-%                     Activity after each iteration; use (:,:,end) for final result
-%   vx              - Decoded x-component of velocity (scalar, same units as pref_vel)
-%                     Center-of-mass velocity from final processed response
-%   vy              - Decoded y-component of velocity (scalar, same units as pref_vel)
-%                     Center-of-mass velocity from final processed response
-%
-%   ALGORITHM:
-%   The function implements a 4-stage iterative process:
-%   1. Distance Computation: Creates 2D feature space combining velocity and orientation
-%   2. Center-Surround Kernel: Builds difference-of-Gaussians with gentle inhibition
-%   3. Iterative Processing: Applies recurrent competitive dynamics:
-%      - Hard thresholding (noise removal)
-%      - Logistic contrast enhancement
-%      - Center-surround filtering  
-%      - Mean normalization (stability)
-%   4. Population Vector Decoding: Center-of-mass from final activity pattern
-%
-%   TYPICAL USAGE:
-%   % Standard motion processing parameters
-%   [processed, vx, vy] = DecodeMxHat(pop_resp, param, 2.0, pi/8, 2.5, 10, 5, 0.2);
-%
-%   % For fine localization (stronger competition)
-%   [processed, vx, vy] = DecodeMxHat(pop_resp, param, 1.0, pi/8, 1.8, 15, 10, 0.2);
-%
-%   % For noise robustness (gentler processing)  
-%   [processed, vx, vy] = DecodeMxHat(pop_resp, param, 3.0, pi/6, 3.5, 8, 3, 0.3);
-%
-%   NOTES:
-%   - Algorithm preserves multiple activity peaks unlike winner-take-all approaches
-%   - Biologically plausible: mimics recurrent cortical center-surround dynamics
-%   - Robust to noise through iterative refinement
-%   - Competition strength tunable via K parameter
-%   - Convergence typically achieved within 10-15 iterations
-%
-%   See also: Population vector decoding, center-surround filtering, competitive networks
-%
-%   Author: Fulvio Missoni; Andrea Canessa;
-%   Date: 28-07-25
-%   Version: 1.0
+function [pop_resp_V1MT, v_CM, v_max] = DecodeMxHat( ...
+    pop_resp, param, sigma_r, sigma_t, K, max_iteration, logistic_slope, logistic_centre)
+%DECODEMXHAT Competitive localization via Mexican-hat filtering in neural space
 
-
-%%
-% Set parameters
-th = 2e-2;
-
+%% normalise pop_resp for having weights for CM decoding
+% Normalize pop_resp to ensure weights for CM decoding
+pop_resp = pop_resp / sum(pop_resp(:));
+%% Parameters
+% th = 2e-2;
+th = 1e-15;
 theta_cell_OUT = 0:pi/param.n_orient:pi-pi/param.n_orient;
-[xx,tt] = meshgrid(param.pref_vel,theta_cell_OUT);
-% tt = tt + pi/2;  % Convert orientation to motion direction (perpendicular)
 
-tt = tt + pi*(xx<0);
-xx = abs(xx);
-% dx = xx(:).*cos(tt(:));
-% dy = xx(:).*sin(tt(:));
-X = ((xx(:) - xx(:)').^2) / sigma_r^2 + ((tt(:) - tt(:)').^2) / sigma_t^2;
-%MEXICAN HAT
-MX = 1/(2*pi*sigma_r*sigma_t)*exp(-X/2) - ...
-    1/(2*pi*K^2*sigma_r*sigma_t)*exp(-X/(2*K^2));
-MX = MX./max(MX,[],'all');
+n_orient = param.n_orient;
+n_vel = numel(param.pref_vel);
 
-%Max number of recurrency iteration
-%     max_iteration = 10;
-sze = size(squeeze(pop_resp(:,:)));
+%% ================= INTERPOLATION (unchanged) =================
+[tt_nd, xx_nd] = ndgrid(theta_cell_OUT, param.pref_vel);
 
-% logistic_centre = M*logistic_centre;
-% for i=1:size(pop_resp,1)
-    % tmp = pop_resp_BioGautama;
-    tmp = pop_resp;
-    %organize population responses
-    pop_resp_V1MT(:,:,1) = pop_resp;
-    for indResp = 2:max_iteration
-        %Apply my Weights
-        %iterates mexican hat weigthing function
-        CT = reshape(tmp,sze(1)*sze(2),1);
-        CT(CT<th) = 0;
-        % M = max(CT,[],'all');
-        % CT = M*1./(1+exp(-logistic_slope*(squeeze(CT)-M*logistic_centre)));
-        CT = MX*CT;
-        % CT = CT./max(CT,[],'all','omitnan');
-        pop_resp_V1MT(:,:,indResp) = reshape(CT,sze);
-        tmp = CT;
-    end
-% end
-%Thresholding
-% M = max(squeeze(pop_resp_V1MT(:,:,max_iteration)),[],'all');
-% pop_resp_V1MT(:,:,max_iteration) = M*1./(1+exp(-logistic_slope*(squeeze(pop_resp_V1MT(:,:,max_iteration))-M*logistic_centre)));
-pop_resp_V1MT = reshape(pop_resp_V1MT,param.n_orient,numel(param.pref_vel),max_iteration);
+tt_fine = linspace(min(theta_cell_OUT), max(theta_cell_OUT), 100);
+xx_fine = linspace(min(param.pref_vel), max(param.pref_vel), 100);
+[tt_interp, xx_interp] = ndgrid(tt_fine, xx_fine);
 
-% centre of mass
-% for i=1:numel(diff_c)
-subPopResp = squeeze(pop_resp_V1MT(:,:,max_iteration));
-M = sum(sum(subPopResp));
-%centre of mass decoding
-vx = squeeze(sum(sum(subPopResp.*(xx.*cos(tt)),1),2)./M);
-vy = squeeze(sum(sum(subPopResp.*(xx.*sin(tt)),1),2)./M);
+pop_resp_interp = interp2(xx_nd, tt_nd, pop_resp, xx_interp, tt_interp, 'cubic');
+
+% tt_interp_adj = tt_interp + pi*(xx_interp < 0);
+% xx_interp_adj = abs(xx_interp);
+
+
+
+%% ================= MEXICAN HAT (FIXED) =================
+% Neural grid (orientation × velocity)
+[TH1, V1] = ndgrid(theta_cell_OUT, param.pref_vel);
+[TH2, V2] = ndgrid(theta_cell_OUT, param.pref_vel);
+
+TH1 = TH1(:);  V1 = V1(:);
+TH2 = TH2(:);  V2 = V2(:);
+
+% --- circular orientation distance (π-periodic) ---
+dtheta = abs(TH1 - TH2');
+dtheta = min(dtheta, pi - dtheta);
+
+% --- velocity distance ---
+dvel = abs(V1 - V2');
+
+% --- squared distance in NEURAL space ---
+D2 = (dvel.^2) / sigma_r^2 + (dtheta.^2) / sigma_t^2;
+
+% --- Mexican hat (Difference of Gaussians) ---
+Exc = exp(-D2/2);
+Inh = (1/K^2) * exp(-D2/(2*K^2));
+MX = Exc - Inh;
+
+% --- enforce competition (zero-sum rows) ---
+% MX = MX - mean(MX, 2);
+
+%% ================= ITERATIVE DYNAMICS (CORRECTED) =================
+pop_resp_V1MT = zeros(n_orient, n_vel, max_iteration);
+pop_resp_V1MT(:,:,1) = pop_resp;
+
+tmp = pop_resp(:);
+
+for it = 2:max_iteration
+    % 1. Thresholding (Noise suppression)
+    tmp(tmp < th) = 0;
+    
+    % 2. Apply Filter
+    drive = MX * tmp;
+    
+    % 3. Apply Update (Rectified)
+    % We add the drive to the previous state (integration) or replace it.
+    % For simple filtering, replacement is fine:
+    tmp = drive;
+    tmp(tmp < 0) = 0; % Ensure non-negative after inhibition
+    
+    % % 4. NORMALIZATION (Crucial Replacement for Logistic)
+    % % This prevents explosion and allows the "blob" to stabilize.
+    % % Dividing by the max value keeps the peak height = 1, 
+    % % allowing the width to settle based on sigma_r/sigma_t.
+    % current_max = max(tmp(:));
+    % if current_max > 0
+    %     tmp = tmp ./ current_max; 
+    % end
+    
+    % Store
+    pop_resp_V1MT(:,:,it) = reshape(tmp, n_orient, n_vel);
+end
+
+%% ================= CENTER OF MASS DECODING (INTERPOLATED) =================
+
+% Risposta finale
+subPopResp = pop_resp_V1MT(:,:,end)./ sum(pop_resp_V1MT(:,:,end),'all');
+
+% --- interpolazione della risposta finale ---
+subPopResp_interp = interp2( ...
+    xx_nd, tt_nd, subPopResp, ...
+    xx_interp, tt_interp, ...
+    'cubic', 0);
+
+% % --- stessa correzione angolo/velocità usata per v_max ---
+% tt_interp_adj = tt_interp + pi*(xx_interp < 0);
+% xx_interp_adj = abs(xx_interp);
+
+% --- centro di massa nello spazio interpolato ---
+% M = sum(subPopResp_interp(:));
+
+v_CM(1) = sum(sum(subPopResp_interp .* ...
+           (xx_interp .* cos(tt_interp)))) ./ sum(sum(subPopResp_interp));
+
+v_CM(2) = sum(sum(subPopResp_interp .* ...
+           (xx_interp .* sin(tt_interp)))) ./ sum(sum(subPopResp_interp));
+
+[~, max_ind] = max(subPopResp_interp(:));
+[row_max, col_max] = ind2sub(size(subPopResp_interp), max_ind);
+
+v_max(1) = xx_interp(row_max,col_max) * cos(tt_interp(row_max,col_max));
+v_max(2) = xx_interp(row_max,col_max) * sin(tt_interp(row_max,col_max));
+
 end

@@ -11,7 +11,7 @@ function W = weightingfunctions_general(xx, tt)
 % Outputs:
 %   W - weighting matrices [N x N x 5] where N = n_orient * n_vel
 
-sigma_t = 1;
+sigma_t = pi/8*2;
 N = numel(xx);
 W = zeros([N, N, 5]);
 
